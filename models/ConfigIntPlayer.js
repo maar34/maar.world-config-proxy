@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+
 const SonificationSchema = new Schema({
   regen1: { type: String, required: true },
   regen2: { type: String, required: true },

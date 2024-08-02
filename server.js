@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const SonicEngine = require('./models/SonicEngine');
+const Exoplanet = require('./models/Exoplanet'); // Import the Exoplanet model
+const configRoutes = require('./routes/configRoutes'); // Import the routes routes/configRoutes.js
 
 dotenv.config();
 
@@ -23,12 +25,30 @@ app.use(cors({
 }));
 
 mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
+
+app.use('/api', configRoutes); // Use the routes
+
+// Route to fetch exoplanet data
+app.get('/metadata/exoplanets.json', async (req, res) => {
+  try {
+    console.log('Fetching exoplanet data');
+    const exoplanets = await Exoplanet.find({}).lean();
+
+    console.log(`Found ${exoplanets.length} exoplanets`);
+    if (exoplanets.length > 0) {
+      res.json(exoplanets);
+    } else {
+      res.status(404).json({ message: 'No exoplanets found' });
+    }
+  } catch (err) {
+    console.error('Error fetching exoplanets:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
 
 app.get('/metadata/sonicEngines.json', async (req, res) => {
   try {
@@ -49,3 +69,5 @@ app.get('/metadata/sonicEngines.json', async (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+module.exports = app;
