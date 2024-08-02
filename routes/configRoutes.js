@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const ConfigIntPlayerController = require('../controllers/ConfigIntPlayerController');
+const configIntPlayerController = require('../controllers/configIntPlayerController');
 
-router.post('/ConfigIntPlayer', ConfigIntPlayerController.createConfigIntPlayer);
-router.get('/ConfigIntPlayer', ConfigIntPlayerController.getConfigIntPlayers);
+router.post('/configIntPlayer', configIntPlayerController.createConfigIntPlayer);
+router.get('/configIntPlayers', configIntPlayerController.getConfigIntPlayers);
 
 module.exports = router;
