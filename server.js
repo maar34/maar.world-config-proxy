@@ -3,9 +3,7 @@ const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const SonicEngine = require('./models/SonicEngine');
-const Exoplanet = require('./models/Exoplanet'); // Import the Exoplanet model
-const configRoutes = require('./routes/configRoutes'); // Import the routes routes/configRoutes.js
+const configRoutes = require('./routes/configRoutes'); // Update the path here
 
 dotenv.config();
 
@@ -30,7 +28,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-app.use('/api', configRoutes); // Use the routes
+app.use('/api', configRoutes);
 
 // Route to fetch exoplanet data
 app.get('/metadata/exoplanets.json', async (req, res) => {
@@ -50,6 +48,7 @@ app.get('/metadata/exoplanets.json', async (req, res) => {
   }
 });
 
+// Route to fetch sonic engine data
 app.get('/metadata/sonicEngines.json', async (req, res) => {
   try {
     console.log('Fetching sonic engines');

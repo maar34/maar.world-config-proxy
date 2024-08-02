@@ -4,5 +4,8 @@ const configIntPlayerController = require('../controllers/ConfigIntPlayerControl
 
 router.post('/configIntPlayer', configIntPlayerController.createConfigIntPlayer);
 router.get('/configIntPlayers', configIntPlayerController.getConfigIntPlayers);
+router.post('/uploadFiles', configIntPlayerController.uploadFiles);
+router.get('/fetchExoplanetData', configIntPlayerController.fetchExoplanetData);
+router.get('/fetchSonicEngineData', configIntPlayerController.fetchSonicEngineData);
 
 module.exports = router;

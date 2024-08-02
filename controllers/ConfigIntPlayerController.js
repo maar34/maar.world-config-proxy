@@ -1,4 +1,8 @@
 const ConfigIntPlayer = require('../models/ConfigIntPlayer');
+const SonicEngine = require('../models/SonicEngine');
+const Exoplanet = require('../models/Exoplanet');
+const path = require('path');
+const multer = require('multer');
 
 exports.createConfigIntPlayer = async (req, res) => {
   try {
@@ -19,3 +23,58 @@ exports.getConfigIntPlayers = async (req, res) => {
   }
 };
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const ipId = req.body.ipId || 'default';
+    const uploadPath = path.join(__dirname, '../uploads', ipId);
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage }).fields([
+  { name: 'uploadObj', maxCount: 1 },
+  { name: 'uploadTexture', maxCount: 1 }
+]);
+
+exports.uploadFiles = (req, res) => {
+  upload(req, res, (err) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    const files = req.files;
+    const response = {
+      uploadObjURL: `/uploads/${req.body.ipId || 'default'}/${files.uploadObj[0].originalname}`,
+      uploadTextureURL: `/uploads/${req.body.ipId || 'default'}/${files.uploadTexture[0].originalname}`
+    };
+    res.json(response);
+  });
+};
+
+// Example function to fetch exoplanet data
+exports.fetchExoplanetData = async (req, res) => {
+  try {
+    console.log('Fetching exoplanet data');
+    const exoplanets = await Exoplanet.find();
+    console.log('Fetched exoplanets:', exoplanets);
+    res.status(200).send(exoplanets);
+  } catch (error) {
+    console.error('Error fetching exoplanets:', error);
+    res.status(500).send({ error: 'Error fetching exoplanets' });
+  }
+};
+
+// Example function to fetch sonic engine data
+exports.fetchSonicEngineData = async (req, res) => {
+  try {
+    console.log('Fetching sonic engines');
+    const sonicEngines = await SonicEngine.find();
+    console.log('Fetched sonic engines:', sonicEngines);
+    res.status(200).send(sonicEngines);
+  } catch (error) {
+    console.error('Error fetching sonic engines:', error);
+    res.status(500).send({ error: 'Error fetching sonic engines' });
+  }
+};
