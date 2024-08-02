@@ -1,0 +1,147 @@
+{
+    "Sonic Engine 000": {
+      "engine": "d00_c01_v1.3.json",
+      "xTag": "Speed",
+      "yTag": "Tremolo",
+      "zTag": "Reverb"
+    },
+    "Sonic Engine 001": {
+      "engine": "d00_c01_v1.3.json",
+      "xTag": "Speed",
+      "yTag": "Tremolo",
+      "zTag": "Reverb",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+
+
+    },
+    "Sonic Engine 002": {
+      "engine": "d00_c02_v1.3.json",
+      "xTag": "Speed pShift",
+      "yTag": "Adapt Filter",
+      "zTag": "Cosmic Delay",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    },
+    "Sonic Engine 003": {
+      "engine": "d00_c03_v1.3.json",
+      "xTag": "Spatial Speed",
+      "yTag": "Ring Oribitator",
+      "zTag": "Interference",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    },
+    "Sonic Engine 004": {
+      "engine": "d00_c04_v1.3.json",
+      "xTag": "Speed",
+      "yTag": "Filters",
+      "zTag": "Chorus",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    },
+    "Sonic Engine 005": {
+      "engine": "d00_c05_v1.3.json",
+      "xTag": "Speed",
+      "yTag": "Flanger",
+      "zTag": "Space Reverb",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    },
+    "Sonic Engine 006": {
+      "engine": "d00_c06_v1.3.json",
+      "xTag": "ULFO",
+      "yTag": "Warm Dist",
+      "zTag": "Flang Vibes",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    },
+    "Sonic Engine 007": {
+      "engine": "d00_c07_v1.3.json",
+      "xTag": "eMods",
+      "yTag": "Octavver",
+      "zTag": "Space Shimmer",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    },
+    "Sonic Engine 008": {
+      "engine": "d00_c08_v1.3.json",
+      "xTag": "Pitch S",
+      "yTag": "Modulator",
+      "zTag": "SpaceRev",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    },
+    "Sonic Engine 009": {
+      "engine": "d00_c09_v1.3.json",
+      "xTag": "Spat Speed",
+      "yTag": "Ring Oribitator",
+      "zTag": "Flang Vibes"
+    },
+    "Sonic Engine 010": {
+      "engine": "d00_c10_v1.3.json",
+      "xTag": "Speed",
+      "yTag": "Filter",
+      "zTag": "Delay",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    },
+    "Sonic Engine 011": {
+      "engine": "d00_c11_v1.3.json",
+      "xTag": "Speed Pan",
+      "yTag": "Ring Oribitator",
+      "zTag": "Chorus",
+      "regen1": "data/sonification_1.min.json",
+      "regen2": "data/sonification_2.min.json",
+      "regen3": "data/sonification_3.min.json",
+      "regen4": "data/sonification_4.min.json",
+      "regen5": "data/sonification_5.min.json",
+      "regen6": "data/sonification_6.min.json",
+      "regen7": "data/sonification_7.min.json"
+    }
+  }
+  
