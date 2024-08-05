@@ -3,6 +3,7 @@ const { Schema } = mongoose;
 
 
 const SonificationSchema = new Schema({
+  regenState: { type: Boolean, required: true },
   regen1: { type: String, required: true },
   regen2: { type: String, required: true },
   regen3: { type: String, required: true },

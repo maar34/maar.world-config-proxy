@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const configRoutes = require('./routes/configRoutes'); // Update the path here
+const configRoutes = require('./routes/configRoutes');
 
 dotenv.config();
 
@@ -29,6 +29,8 @@ mongoose.connect(process.env.MONGO_URI, {
   .catch(err => console.error('MongoDB connection error:', err));
 
 app.use('/api', configRoutes);
+
+console.log('Config Routes:', configRoutes);
 
 // Route to fetch exoplanet data
 app.get('/metadata/exoplanets.json', async (req, res) => {
@@ -68,5 +70,6 @@ app.get('/metadata/sonicEngines.json', async (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+console.log('Server is running...');
 
 module.exports = app;
