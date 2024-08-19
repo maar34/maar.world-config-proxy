@@ -4,11 +4,14 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const configRoutes = require('./routes/configRoutes');
+const trackRoutes = require('./routes/trackRoutes');
+const http = require('http');
 
 dotenv.config();
 
 const app = express();
-app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.json({ limit: '200mb' }));
+app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
 
 const allowedOrigins = ['http://127.0.0.1:4000', 'http://localhost:4000'];
 app.use(cors({
@@ -23,12 +26,14 @@ app.use(cors({
 }));
 
 mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000
+  serverSelectionTimeoutMS: 60000, // 1 minute
+  socketTimeoutMS: 120000,         // 2 minutes
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
+
 app.use('/api', configRoutes);
+app.use('/api', trackRoutes);
 
 console.log('Config Routes:', configRoutes);
 
@@ -69,7 +74,13 @@ app.get('/metadata/sonicEngines.json', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-console.log('Server is running...');
+const server = http.createServer(app);
+
+// Set server timeout to handle longer file uploads
+server.setTimeout(20 * 60 * 1000); // 20 minutes
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
 module.exports = app;

@@ -28,7 +28,7 @@ const upload = multer({ storage: storage }).fields([
   { name: 'uploadTexture', maxCount: 1 }
 ]);
 
-exports.uploadFiles = (req, res) => {
+exports.uploadModelFiles = (req, res) => {
   console.log('Upload Files Endpoint Hit');
   upload(req, res, (err) => {
     if (err) {

@@ -11,15 +11,18 @@ router.get('/test', (req, res) => {
   res.send('Test route is working!');
 });
 
-// Routes for creating and fetching configuration players
-router.post('/configIntPlayer', configIntPlayerController.createConfigIntPlayer);
+// Routes for creating and fetching configuration players 
+// In the front end, this functions are used by the protoplanet form 
+router.post('/uploadModelFiles', configIntPlayerController.uploadModelFiles); //
+
 router.get('/configIntPlayers', configIntPlayerController.getConfigIntPlayers);
 
-// Routes for file uploads
-router.post('/uploadFiles', configIntPlayerController.uploadFiles);
+router.post('/configIntPlayer', configIntPlayerController.createConfigIntPlayer); // set Int Player form in the database and write the Artistic name set by the user, then this planet is owned 
 router.post('/updateExoplanet', exoplanetController.updateExoplanet); // Ensure this route is correct
 
-// Routes for fetching data
+
+// Routes for fetching data to fill protoplanet form options 
+
 router.get('/fetchExoplanetData', configIntPlayerController.fetchExoplanetData);
 router.get('/fetchSonicEngineData', configIntPlayerController.fetchSonicEngineData);
 
