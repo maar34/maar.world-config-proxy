@@ -6,6 +6,9 @@ const mongoose = require('mongoose');
 const configRoutes = require('./routes/configRoutes');
 const trackRoutes = require('./routes/trackRoutes');
 const http = require('http');
+const rateLimit = require('express-rate-limit');
+
+
 
 dotenv.config();
 
@@ -36,6 +39,39 @@ app.use('/api', configRoutes);
 app.use('/api', trackRoutes);
 
 console.log('Config Routes:', configRoutes);
+
+// OAuth 2.0 Token Exchange Route
+app.post('/exchange-token', async (req, res) => {
+    const { code } = req.body;
+
+    try {
+        const fetch = (await import('node-fetch')).default;  // Dynamically import node-fetch
+        const response = await fetch('https://cloud.digitalocean.com/v1/oauth/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                grant_type: 'authorization_code',
+                code: code,
+                client_id: process.env.CLIENT_ID,
+                client_secret: process.env.CLIENT_SECRET,
+                redirect_uri: 'https://maar.world/login',
+            }),
+        });
+
+        const data = await response.json();
+
+        if (data.access_token) {
+            res.json({ access_token: data.access_token });
+        } else {
+            res.status(400).json({ error: 'Token exchange failed' });
+        }
+    } catch (error) {
+        console.error('Error exchanging token:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 // Route to fetch exoplanet data
 app.get('/metadata/exoplanets.json', async (req, res) => {
@@ -72,6 +108,14 @@ app.get('/metadata/sonicEngines.json', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+
+app.use(limiter);
 
 const PORT = process.env.PORT || 3001;
 const server = http.createServer(app);
