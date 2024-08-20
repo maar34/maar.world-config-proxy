@@ -5,29 +5,33 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
 
+// Create directory if it doesn't exist
 const createUploadPath = (uploadPath) => {
   if (!fs.existsSync(uploadPath)) {
     fs.mkdirSync(uploadPath, { recursive: true });
   }
 };
 
+// Multer storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const ipId = req.body.ipId || 'default';
-    const uploadPath = path.join(__dirname, '../uploads', ipId);
+    const uploadPath = path.join(__dirname, '../uploads/models', ipId); // Store in models directory
     createUploadPath(uploadPath);
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    cb(null, file.originalname);
+    cb(null, file.originalname); // Keep the original file name
   }
 });
 
+// Multer upload configuration
 const upload = multer({ storage: storage }).fields([
   { name: 'uploadObj', maxCount: 1 },
   { name: 'uploadTexture', maxCount: 1 }
 ]);
 
+// Handle file uploads
 exports.uploadModelFiles = (req, res) => {
   console.log('Upload Files Endpoint Hit');
   upload(req, res, (err) => {
@@ -38,13 +42,14 @@ exports.uploadModelFiles = (req, res) => {
     console.log('Files received:', req.files);
     const files = req.files;
     const response = {
-      uploadObjURL: `/uploads/${req.body.ipId || 'default'}/${files.uploadObj[0].originalname}`,
-      uploadTextureURL: `/uploads/${req.body.ipId || 'default'}/${files.uploadTexture[0].originalname}`
+      uploadObjURL: `/uploads/models/${req.body.ipId || 'default'}/${files.uploadObj[0].originalname}`,
+      uploadTextureURL: `/uploads/models/${req.body.ipId || 'default'}/${files.uploadTexture[0].originalname}`
     };
     res.json(response);
   });
 };
 
+// Other methods remain unchanged
 exports.createConfigIntPlayer = async (req, res) => {
   try {
     const config = new ConfigIntPlayer(req.body);

@@ -1,10 +1,11 @@
-// routes/trackRoutes.js
-
 const express = require('express');
 const router = express.Router();
-const trackController = require('../controllers/TrackController');
+const trackController = require('../controllers/TrackController'); // Ensure this path is correct
 
-// Route to handle track release form submission
-router.post('/uploadAudioFiles', trackController.uploadAudioFiles);
+// Route to handle track metadata submission
+router.post('/submitTrackData', trackController.submitTrackData);
+
+// Route to handle audio file uploads
+router.post('/uploadTrackFiles/:trackId', trackController.uploadTrackFiles);
 
 module.exports = router;
