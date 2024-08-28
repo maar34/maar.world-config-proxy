@@ -7,17 +7,22 @@ const fs = require('fs');
 exports.submitTrackData = async (req, res) => {
     try {
         // Validate incoming JSON data
-        const { exoplanet, artistName, songName, type, genre, mood, additionalTags, description, credits, privacy, releaseDate, licence, enableDirectDownloads } = req.body;
+        const { exoplanet, artists, trackName, type, genre, mood, additionalTags, description, credits, privacy, releaseDate, licence, enableDirectDownloads } = req.body;
 
-        if (!exoplanet || !artistName || !songName) {
+        if (!exoplanet || !artists || !trackName) {
             return res.status(400).json({ error: 'Required fields missing.' });
+        }
+
+        // Validate that at least one artist is provided
+        if (!Array.isArray(artists) || artists.length === 0) {
+            return res.status(400).json({ error: 'At least one artist is required.' });
         }
 
         // Create a new track instance
         const newTrack = new Track({
             exoplanet,
-            artistName,
-            songName,
+            artistNames: artists,  // This is an array of objects with name and genderIdentity
+            trackName,
             type,
             genre,
             mood,
@@ -43,7 +48,6 @@ exports.submitTrackData = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-
 // Step 2: Handle audio file uploads and cover image upload
 exports.uploadTrackFiles = (req, res) => {
     const { trackId } = req.params;

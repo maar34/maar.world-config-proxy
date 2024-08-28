@@ -4,8 +4,13 @@ const mongoose = require('mongoose');
 
 const TrackSchema = new mongoose.Schema({
     exoplanet: { type: String, required: true },
-    artistName: { type: String, required: true },
-    songName: { type: String, required: true },
+    artistNames: [
+        {
+            name: { type: String, required: true },
+            genderIdentity: { type: String, enum: ['Prefer not to reply', 'Woman', 'Man', 'Trans woman', 'Trans man', 'Non-Binary', 'Not Listed'], default: 'Prefer not to reply' }
+        }
+    ],
+    trackName: { type: String, required: true },
     type: { type: String, required: true },
     genre: { type: String },
     mood: { type: String },
@@ -18,7 +23,7 @@ const TrackSchema = new mongoose.Schema({
     enableDirectDownloads: { type: Boolean, default: false },
     audioFileWAV: { type: String },
     audioFileMP3: { type: String },
-    coverImage: { type: String },  // New field for the cover image
+    coverImage: { type: String }
 }, {
     timestamps: true
 });
