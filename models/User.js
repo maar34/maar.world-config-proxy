@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const userInfoSchema = new mongoose.Schema({
-  username: { type: String, required: true },
   genderIdentity: { 
     type: String, 
     enum: [
@@ -34,7 +33,7 @@ const userInfoSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId(), unique: true }, 
-  username: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true }, // This is the main username field
   userInfo: userInfoSchema, // Changed from an array to a single object
   email: { type: String, required: true, unique: true },
   role: { type: String, default: 'Listener' }, 
@@ -47,7 +46,6 @@ const userSchema = new mongoose.Schema({
   },
   createdAt: { type: Date, default: Date.now }
 });
-
 
 // Ensure that `userId` is used as a unique identifier in addition to `_id`.
 userSchema.index({ userId: 1 }, { unique: true });

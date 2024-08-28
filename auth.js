@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const User = require('./models/User');
 const mongoose = require('mongoose');
+const User = require('./models/User'); // Adjust the path as needed
 
 // Function to handle user login or sign-up
 async function handleUserLogin(req, res) {
@@ -30,33 +30,29 @@ async function handleUserLogin(req, res) {
                     id: user._id,  // Include userId
                     email: user.email,
                     role: user.role,
-                    username: user.userInfo.length ? user.userInfo[0].username : user._id.toString(),
-                    genderIdentity: user.userInfo.length ? user.userInfo[0].genderIdentity : '',
-                    pronouns: user.userInfo.length ? user.userInfo[0].pronouns : '',
-                    otherPronouns: user.userInfo.length ? user.userInfo[0].otherPronouns : '',
+                    username: user.username,
+                    genderIdentity: user.userInfo.genderIdentity,
+                    pronouns: user.userInfo.pronouns,
+                    otherPronouns: user.userInfo.otherPronouns,
                     profileImage: user.profileImage,
                     phone: user.phone,
                 }
             });
         } else {
-            // Create a new user with userId as the username
+            // Create a new user
             const newUserId = new mongoose.Types.ObjectId();
             const newUsername = newUserId.toString(); // Use userId as the default username
 
-            // Ensure username is set before inserting
-            if (!newUsername) {
-                throw new Error('Failed to generate a valid username.');
-            }
-
             user = new User({
                 userId: newUserId,
+                username: newUsername, // Directly assign username here
                 email,
                 role: 'Listener',
-                userInfo: [{ // Pass userInfo as an array, as per your schema
+                userInfo: { // Pass userInfo as an object
                     username: newUsername,
-                    genderIdentity: 'Prefer not to reply', // or set based on user input
-                    pronouns: 'Prefer not to say' // or set based on user input
-                }]
+                    genderIdentity: 'Prefer not to reply',
+                    pronouns: 'Prefer not to say'
+                }
             });
 
             // Log user object before saving
@@ -79,10 +75,10 @@ async function handleUserLogin(req, res) {
                     id: user._id,
                     email: user.email,
                     role: user.role,
-                    username: newUsername,
-                    genderIdentity: user.userInfo[0].genderIdentity || '',
-                    pronouns: user.userInfo[0].pronouns || '',
-                    otherPronouns: user.userInfo[0].otherPronouns || '',
+                    username: user.username,
+                    genderIdentity: user.userInfo.genderIdentity,
+                    pronouns: user.userInfo.pronouns,
+                    otherPronouns: user.userInfo.otherPronouns,
                     profileImage: user.profileImage,
                     phone: user.phone,
                 }
