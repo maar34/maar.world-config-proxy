@@ -27,12 +27,13 @@ async function handleUserLogin(req, res) {
                 message: 'User logged in successfully',
                 token,
                 user: {
+                    id: user._id,  // Include userId
                     email: user.email,
                     role: user.role,
-                    username: user.username,
-                    genderIdentity: user.userInfo.genderIdentity || '',
-                    pronouns: user.userInfo.pronouns || '',
-                    otherPronouns: user.userInfo.otherPronouns || '',
+                    username: user.userInfo.length ? user.userInfo[0].username : user._id.toString(),
+                    genderIdentity: user.userInfo.length ? user.userInfo[0].genderIdentity : '',
+                    pronouns: user.userInfo.length ? user.userInfo[0].pronouns : '',
+                    otherPronouns: user.userInfo.length ? user.userInfo[0].otherPronouns : '',
                     profileImage: user.profileImage,
                     phone: user.phone,
                 }
@@ -49,14 +50,13 @@ async function handleUserLogin(req, res) {
 
             user = new User({
                 userId: newUserId,
-                username: newUsername, // Directly assign username here
                 email,
                 role: 'Listener',
-                userInfo: { // Pass userInfo as an object, not an array
+                userInfo: [{ // Pass userInfo as an array, as per your schema
                     username: newUsername,
                     genderIdentity: 'Prefer not to reply', // or set based on user input
                     pronouns: 'Prefer not to say' // or set based on user input
-                }
+                }]
             });
 
             // Log user object before saving
@@ -76,12 +76,13 @@ async function handleUserLogin(req, res) {
                 message: 'User signed up successfully',
                 token,
                 user: {
+                    id: user._id,
                     email: user.email,
                     role: user.role,
                     username: newUsername,
-                    genderIdentity: user.userInfo.genderIdentity || '',
-                    pronouns: user.userInfo.pronouns || '',
-                    otherPronouns: user.userInfo.otherPronouns || '',
+                    genderIdentity: user.userInfo[0].genderIdentity || '',
+                    pronouns: user.userInfo[0].pronouns || '',
+                    otherPronouns: user.userInfo[0].otherPronouns || '',
                     profileImage: user.profileImage,
                     phone: user.phone,
                 }

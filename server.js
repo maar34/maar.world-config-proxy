@@ -11,6 +11,7 @@ const magic = require('./auth'); // Import the Magic authentication module
 const User = require('./models/User'); // Import the User model
 const authenticate = require('./auth'); // Import from the root folder
 const jwt = require('jsonwebtoken'); // For securely passing user info
+const authRoutes = require('./routes/authRoutes'); // Adjust path if necessary
 
 dotenv.config();
 
@@ -42,6 +43,9 @@ app.use('/api', trackRoutes);
 // Use the routes with middleware applied
 app.use('/api/config', configRoutes);
 app.use('/api/tracks', trackRoutes);
+
+// Use the routes with a prefix
+app.use('/api', authRoutes);
 
 //app.use('/api/config', authenticate, configRoutes);
 //app.use('/api/tracks', authenticate, trackRoutes);
