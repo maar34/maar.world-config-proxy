@@ -23,28 +23,50 @@ router.get('/moderator/dashboard', verifyJWT, requireRole('Moderator', 'Content 
 router.get('/user/profile', verifyJWT, (req, res) => {
   res.json({ user: req.user });
 });
-
-// A route to get the user profile based on the email
+// A route to get the user profile based on the userId
 router.get('/getUserProfile', async (req, res) => {
-  try {
-      const userId = req.query.userId;
-      if (!userId) {
-          return res.status(400).json({ message: 'User ID is required' });
-      }
-
-      const user = await User.findById(userId);
-      if (!user) {
-          return res.status(404).json({ message: 'User not found' });
-      }
-
-      // Send back the user data, omitting sensitive fields like password
-      const { username, email, role, genderIdentity, pronouns, phone, profileImage } = user;
-      res.json({ username, email, role, genderIdentity, pronouns, phone, profileImage });
-  } catch (error) {
-      console.error('Error fetching user profile:', error);
-      res.status(500).json({ message: 'Server error' });
-  }
-});
+    try {
+        const userId = req.query.userId;
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required' });
+        }
+  
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+  
+        // Extract user info fields from user.userInfo
+        const {
+            username,
+            email,
+            role,
+            phone,
+            profileImage,
+            userInfo: {
+                genderIdentity,
+                pronouns,
+                otherPronouns,
+            } = {}
+        } = user;
+  
+        // Send back the full user data, omitting sensitive fields like password
+        res.json({
+            username,
+            email,
+            role,
+            genderIdentity,
+            pronouns,
+            otherPronouns,
+            phone,
+            profileImage
+        });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
 
 // Update user profile route
 router.post('/updateUserProfile', upload.none(), async (req, res) => {
