@@ -7,8 +7,10 @@ const configRoutes = require('./routes/configRoutes');
 const trackRoutes = require('./routes/trackRoutes');
 const http = require('http');
 const rateLimit = require('express-rate-limit');
-
-
+const magic = require('./auth'); // Import the Magic authentication module
+const User = require('./models/User'); // Import the User model
+const authenticate = require('./auth'); // Import from the root folder
+const jwt = require('jsonwebtoken'); // For securely passing user info
 
 dotenv.config();
 
@@ -34,43 +36,64 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-
 app.use('/api', configRoutes);
 app.use('/api', trackRoutes);
 
+// Use the routes with middleware applied
+app.use('/api/config', configRoutes);
+app.use('/api/tracks', trackRoutes);
+
+//app.use('/api/config', authenticate, configRoutes);
+//app.use('/api/tracks', authenticate, trackRoutes);
+
 console.log('Config Routes:', configRoutes);
 
-// OAuth 2.0 Token Exchange Route
-app.post('/exchange-token', async (req, res) => {
-    const { code } = req.body;
+// Magic Link Authentication Route
+app.post('/login', async (req, res) => {
+  const didToken = req.headers.authorization.split('Bearer ').pop();
 
-    try {
-        const fetch = (await import('node-fetch')).default;  // Dynamically import node-fetch
-        const response = await fetch('https://cloud.digitalocean.com/v1/oauth/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                grant_type: 'authorization_code',
-                code: code,
-                client_id: process.env.CLIENT_ID,
-                client_secret: process.env.CLIENT_SECRET,
-                redirect_uri: 'https://maar.world/login',
-            }),
-        });
+  try {
+      // Validate the DID token
+      await magic.token.validate(didToken);
 
-        const data = await response.json();
+      // Retrieve the authenticated user metadata
+      const metadata = await magic.users.getMetadataByToken(didToken);
 
-        if (data.access_token) {
-            res.json({ access_token: data.access_token });
-        } else {
-            res.status(400).json({ error: 'Token exchange failed' });
-        }
-    } catch (error) {
-        console.error('Error exchanging token:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
+      // Find or create the user in the database
+      let user = await User.findOne({ email: metadata.email });
+      if (!user) {
+          user = new User({
+              email: metadata.email,
+              username: metadata.email.split('@')[0], // Default username
+              role: 'Listener', // Default role
+          });
+          await user.save();
+      }
+
+      // Generate a JWT with the user's role
+      const token = jwt.sign(
+          { email: user.email, role: user.role },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+      );
+
+      res.json({ token });
+  } catch (error) {
+      res.status(401).json({ error: 'Authentication failed' });
+  }
+});
+
+
+// Route to log out a user
+app.post('/logout', async (req, res) => {
+  const didToken = req.headers.authorization.split('Bearer ').pop();
+
+  try {
+    await magic.users.logoutByToken(didToken);
+    res.json({ message: 'User logged out' });
+  } catch (error) {
+    res.status(401).json({ error: 'Logout failed' });
+  }
 });
 
 // Route to fetch exoplanet data

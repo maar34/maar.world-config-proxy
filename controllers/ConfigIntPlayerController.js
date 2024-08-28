@@ -65,6 +65,7 @@ exports.getConfigIntPlayers = async (req, res) => {
     const configs = await ConfigIntPlayer.find();
     res.status(200).send(configs);
   } catch (err) {
+    console.error('Error creating configuration:', error);
     res.status(400).send(err);
   }
 };
