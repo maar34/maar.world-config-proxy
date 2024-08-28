@@ -19,7 +19,8 @@ const app = express();
 app.use(bodyParser.json({ limit: '200mb' }));
 app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
 
-const allowedOrigins = ['http://127.0.0.1:4000', 'http://localhost:4000'];
+// CORS configuration
+const allowedOrigins = ['http://127.0.0.1:4000', 'http://localhost:4000', 'http://maar.world'];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
@@ -28,7 +29,9 @@ app.use(cors({
       return callback(new Error(msg), false);
     }
     return callback(null, true);
-  }
+  },
+  methods: ['GET', 'POST'], // Allow these HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
 }));
 
 mongoose.connect(process.env.MONGO_URI, {

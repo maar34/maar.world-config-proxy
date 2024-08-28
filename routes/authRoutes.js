@@ -1,27 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { verifyJWT, requireRole } = require('../utils/requireRole'); 
-const { handleUserLogin } = require('../auth'); 
-const User = require('../models/User'); 
+const path = require('path');
+const fs = require('fs');
+const authenticate = require('../auth');
+const { verifyJWT } = require('../utils/requireRole');
+const User = require('../models/User');
 
 // Set up multer for handling file uploads
-const upload = multer();
-
-// A protected route for Admins and Super Admins
-router.get('/admin/dashboard', verifyJWT, requireRole('Admin', 'Super Admin'), (req, res) => {
-  res.json({ message: 'Welcome to the Admin Dashboard' });
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const userId = req.body.userId;
+        const uploadPath = path.join(__dirname, `../uploads/users/${userId}`);
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `profile_${Date.now()}${path.extname(file.originalname)}`);
+    }
 });
 
-// A protected route for Moderators
-router.get('/moderator/dashboard', verifyJWT, requireRole('Moderator', 'Content Moderator', 'Community Moderator'), (req, res) => {
-  res.json({ message: 'Welcome to the Moderator Dashboard' });
-});
-
-// A general route accessible by all authenticated users
-router.get('/user/profile', verifyJWT, (req, res) => {
-  res.json({ user: req.user });
-});
+const upload = multer({ storage });
 
 // A route to get the user profile based on the userId
 router.get('/getUserProfile', async (req, res) => {
@@ -36,16 +37,25 @@ router.get('/getUserProfile', async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Send back the full user data
-        res.json(user);
+        const { username, email, role, phone, profileImage, userInfo } = user;
+        res.json({
+            username,
+            email,
+            role,
+            phone,
+            profileImage,
+            genderIdentity: userInfo?.genderIdentity,
+            pronouns: userInfo?.pronouns,
+            otherPronouns: userInfo?.otherPronouns,
+        });
     } catch (error) {
         console.error('Error fetching user profile:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
 
-// Update user profile route
-router.post('/updateUserProfile', upload.none(), async (req, res) => {
+// Update user profile route including profile image upload
+router.post('/updateUserProfile', upload.single('profileImage'), async (req, res) => {
     try {
         const { userId, username, genderIdentity, customGenderIdentity, pronouns, otherPronouns, phone } = req.body;
 
@@ -53,27 +63,23 @@ router.post('/updateUserProfile', upload.none(), async (req, res) => {
             return res.status(400).json({ success: false, message: 'User ID is required' });
         }
 
-        // Check if the username is already taken by another user
-        const existingUser = await User.findOne({ username, _id: { $ne: userId } });
-        if (existingUser) {
-            return res.status(400).json({ success: false, message: 'Username is already taken' });
+        const updateData = {
+            username,
+            phone,
+            'userInfo.genderIdentity': genderIdentity,
+            'userInfo.customGenderIdentity': customGenderIdentity,
+            'userInfo.pronouns': pronouns,
+            'userInfo.otherPronouns': otherPronouns
+        };
+
+        // Handle profile image if uploaded
+        if (req.file) {
+            updateData.profileImage = `/uploads/users/${userId}/${req.file.filename}`;
         }
 
-        // Find the user by userId and update their profile
-        const user = await User.findByIdAndUpdate(
-            userId,
-            {
-                $set: {
-                    username,
-                    'userInfo.genderIdentity': genderIdentity,
-                    'userInfo.customGenderIdentity': customGenderIdentity,
-                    'userInfo.pronouns': pronouns,
-                    'userInfo.otherPronouns': otherPronouns,
-                    phone,
-                },
-            },
-            { new: true }
-        );
+        const user = await User.findByIdAndUpdate(userId, {
+            $set: updateData,
+        }, { new: true });
 
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
@@ -85,8 +91,5 @@ router.post('/updateUserProfile', upload.none(), async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
-
-// A route that handles user login or sign-up
-router.post('/login', handleUserLogin);
 
 module.exports = router;
