@@ -14,6 +14,7 @@ const userInfoSchema = new mongoose.Schema({
     ], 
     default: 'Prefer not to reply' 
   },
+  customGenderIdentity: { type: String }, // For custom gender identity if 'Not Listed' is selected
   pronouns: { 
     type: String, 
     enum: [
@@ -33,8 +34,14 @@ const userInfoSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId(), unique: true }, 
-  username: { type: String, required: true, unique: true }, // This is the main username field
-  userInfo: userInfoSchema, // Changed from an array to a single object
+  username: { type: String, required: true, unique: true },
+  displayName: { type: String }, // New field
+  profileURL: { type: String }, // New field
+  city: { type: String }, // New field
+  country: { type: String }, // New field
+  bio: { type: String, maxlength: 200 }, // New field
+  customLinks: [{ type: String }], // New field (array of strings for up to 3 custom links)
+  userInfo: userInfoSchema, // Nesting userInfoSchema
   email: { type: String, required: true, unique: true },
   role: { type: String, default: 'Listener' }, 
   phone: String,

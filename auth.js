@@ -36,6 +36,8 @@ async function handleUserLogin(req, res) {
                     otherPronouns: user.userInfo.otherPronouns,
                     profileImage: user.profileImage,
                     phone: user.phone,
+                    displayName: user.displayName,   // Include displayName
+                    profileURL: user.profileURL      // Include profileURL
                 }
             });
         } else {
@@ -48,6 +50,8 @@ async function handleUserLogin(req, res) {
                 username: newUsername, // Directly assign username here
                 email,
                 role: 'Listener',
+                displayName: newUsername, // Assign displayName as userId
+                profileURL: `maar.world/xplorer/${newUsername}`, // Assign profileURL based on userId
                 userInfo: { // Pass userInfo as an object
                     username: newUsername,
                     genderIdentity: 'Prefer not to reply',
@@ -81,6 +85,8 @@ async function handleUserLogin(req, res) {
                     otherPronouns: user.userInfo.otherPronouns,
                     profileImage: user.profileImage,
                     phone: user.phone,
+                    displayName: user.displayName,   // Include displayName
+                    profileURL: user.profileURL      // Include profileURL
                 }
             });
         }

@@ -3,8 +3,6 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const authenticate = require('../auth');
-const { verifyJWT } = require('../utils/requireRole');
 const User = require('../models/User');
 
 // Set up multer for handling file uploads
@@ -37,7 +35,7 @@ router.get('/getUserProfile', async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        const { username, email, role, phone, profileImage, userInfo } = user;
+        const { username, email, role, phone, profileImage, userInfo, displayName, profileURL, city, country, bio, customLinks } = user;
         res.json({
             username,
             email,
@@ -45,8 +43,15 @@ router.get('/getUserProfile', async (req, res) => {
             phone,
             profileImage,
             genderIdentity: userInfo?.genderIdentity,
+            customGenderIdentity: userInfo?.customGenderIdentity,
             pronouns: userInfo?.pronouns,
             otherPronouns: userInfo?.otherPronouns,
+            displayName, // New field
+            profileURL, // New field
+            city, // New field
+            country, // New field
+            bio, // New field
+            customLinks // New field
         });
     } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -57,7 +62,7 @@ router.get('/getUserProfile', async (req, res) => {
 // Update user profile route including profile image upload
 router.post('/updateUserProfile', upload.single('profileImage'), async (req, res) => {
     try {
-        const { userId, username, genderIdentity, customGenderIdentity, pronouns, otherPronouns, phone } = req.body;
+        const { userId, username, genderIdentity, customGenderIdentity, pronouns, otherPronouns, phone, displayName, profileURL, city, country, bio, customLinks } = req.body;
 
         if (!userId) {
             return res.status(400).json({ success: false, message: 'User ID is required' });
@@ -69,7 +74,13 @@ router.post('/updateUserProfile', upload.single('profileImage'), async (req, res
             'userInfo.genderIdentity': genderIdentity,
             'userInfo.customGenderIdentity': customGenderIdentity,
             'userInfo.pronouns': pronouns,
-            'userInfo.otherPronouns': otherPronouns
+            'userInfo.otherPronouns': otherPronouns,
+            displayName, // New field
+            profileURL, // New field
+            city, // New field
+            country, // New field
+            bio, // New field
+            customLinks: JSON.parse(customLinks) // Parse JSON string to array
         };
 
         // Handle profile image if uploaded
