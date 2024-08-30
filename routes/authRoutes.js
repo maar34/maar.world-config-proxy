@@ -102,5 +102,31 @@ router.post('/updateUserProfile', upload.single('profileImage'), async (req, res
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
+// Route to handle public profile view based on profileURL
+    router.get('/:profileURL', async (req, res) => {
+        try {
+            const profileURL = req.params.profileURL;
+            const loggedInUserId = req.userId; // Assuming userId is available in session or token
+
+            // Find the user by profileURL
+            const user = await User.findOne({ profileURL });
+
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            // If the logged-in user is viewing their own profile, redirect to the private view
+            if (user.userId.toString() === loggedInUserId) {
+                return res.redirect('/voyage/profile');
+            }
+
+            // Return the public profile information
+            res.render('publicProfile', { user });
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+            res.status(500).json({ message: 'Server error' });
+        }
+    });
+
 
 module.exports = router;

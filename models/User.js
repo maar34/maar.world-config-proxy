@@ -46,6 +46,9 @@ const userSchema = new mongoose.Schema({
   role: { type: String, default: 'Listener' }, 
   phone: String,
   profileImage: { type: String },
+  privateAccount: { type: Boolean, default: false }, // field to indicate if the account is private / this options is not implemented yet in front end
+  followersCount: { type: Number, default: 0 }, // field to track followers count
+  followingCount: { type: Number, default: 0 }, // field to track following count
   userPlayback: {
     playCount: { type: Number, default: 0 },
     playDuration: { type: Number, default: 0 },

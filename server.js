@@ -5,13 +5,15 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const configIpRoutes = require('./routes/configIpRoutes');
 const trackRoutes = require('./routes/trackRoutes');
+const userRelationshipsRoutes = require('./routes/userRelationshipsRoutes'); // Import the new UserRelationships routes
 const http = require('http');
 const rateLimit = require('express-rate-limit');
 const magic = require('./auth'); // Import the Magic authentication module
 const User = require('./models/User'); // Import the User model
 const authenticate = require('./auth'); // Import from the root folder
 const jwt = require('jsonwebtoken'); // For securely passing user info
-const authRoutes = require('./routes/authRoutes'); // Adjust path if necessary
+const authRoutes = require('./routes/authRoutes'); 
+const profileRoutes = require('./routes/profileRoutes'); // Adjust the path as needed
 
 dotenv.config();
 
@@ -42,6 +44,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 app.use('/api', configIpRoutes);
 app.use('/api', trackRoutes);
+app.use('/api', profileRoutes); // Prefix all routes in profileRoutes.js with /api
 
 // Use the routes with middleware applied
 app.use('/api/config', configIpRoutes);
@@ -50,10 +53,8 @@ app.use('/api/tracks', trackRoutes);
 // Use the routes with a prefix
 app.use('/api', authRoutes);
 
-//app.use('/api/config', authenticate, configIpRoutes);
-//app.use('/api/tracks', authenticate, trackRoutes);
-
-console.log('Config Routes:', configIpRoutes);
+// Mount the UserRelationships routes with a prefix
+app.use('/api/user-relationships', userRelationshipsRoutes); // <-- New Line
 
 // Magic Link Authentication Route
 app.post('/login', async (req, res) => {
@@ -89,7 +90,6 @@ app.post('/login', async (req, res) => {
       res.status(401).json({ error: 'Authentication failed' });
   }
 });
-
 
 // Route to log out a user
 app.post('/logout', async (req, res) => {
