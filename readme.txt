@@ -24,7 +24,7 @@ models/: Contains Mongoose models.
 Config.js: Defines the schema for the configuration data.
 routes/: Contains route definitions.
 
-configRoutes.js: Defines API routes for the configuration data.
+configIpRoutes.js: Defines API routes for the configuration data.
 services/: Contains business logic and interacts with the database.
 
 configService.js: Handles the logic for saving and retrieving configuration data.

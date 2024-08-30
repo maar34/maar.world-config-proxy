@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const configRoutes = require('./routes/configRoutes');
+const configIpRoutes = require('./routes/configIpRoutes');
 const trackRoutes = require('./routes/trackRoutes');
 const http = require('http');
 const rateLimit = require('express-rate-limit');
@@ -40,20 +40,20 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-app.use('/api', configRoutes);
+app.use('/api', configIpRoutes);
 app.use('/api', trackRoutes);
 
 // Use the routes with middleware applied
-app.use('/api/config', configRoutes);
+app.use('/api/config', configIpRoutes);
 app.use('/api/tracks', trackRoutes);
 
 // Use the routes with a prefix
 app.use('/api', authRoutes);
 
-//app.use('/api/config', authenticate, configRoutes);
+//app.use('/api/config', authenticate, configIpRoutes);
 //app.use('/api/tracks', authenticate, trackRoutes);
 
-console.log('Config Routes:', configRoutes);
+console.log('Config Routes:', configIpRoutes);
 
 // Magic Link Authentication Route
 app.post('/login', async (req, res) => {

@@ -81,4 +81,4 @@ const ConfigSchema = new Schema({
   timestamps: true  // Automatically add createdAt and updatedAt fields
 });
 
-module.exports = mongoose.model('Config', ConfigSchema);
+module.exports = mongoose.model('ConfigIp', ConfigSchema);
