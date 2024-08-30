@@ -1,6 +1,8 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const UserRelationships = require('../models/UserRelationships');
 
+// Follow a User or Interplanetary Player
 // Follow a User or Interplanetary Player
 exports.followUserOrIp = async (req, res) => {
     try {
@@ -20,12 +22,7 @@ exports.followUserOrIp = async (req, res) => {
         }
 
         const relationshipType = followingId ? 'user' : 'ip';
-        let status = 'active';
-
-        if (followingId) {
-            const followingUser = await User.findById(followingId);
-            status = followingUser.privateAccount ? 'pending' : 'active'; // Automatically handle private accounts
-        }
+        const status = 'active';  // Since all accounts are public, we directly set the status to active
 
         const newRelationship = new UserRelationships({
             followerId,
@@ -39,18 +36,13 @@ exports.followUserOrIp = async (req, res) => {
 
         await newRelationship.save();
 
-        if (newRelationship.status === 'pending') {
-            // Notify the user of the pending request (assuming a notification system is in place)
-            notifyUser(followingId, 'You have a new follow request from ' + followerId);
-        }
-
-        // Increment following/followers counts based on status
-        if (newRelationship.status === 'active' && followingId) {
+        // Increment following/followers counts for public accounts
+        if (status === 'active' && followingId) {
             await User.findByIdAndUpdate(followerId, { $inc: { followingCount: 1 } });
             await User.findByIdAndUpdate(followingId, { $inc: { followersCount: 1 } });
         }
 
-        res.json({ message: 'Follow request sent', relationship: newRelationship });
+        res.json({ message: 'Followed successfully', relationship: newRelationship });
     } catch (error) {
         console.error('Error following entity:', error);
         res.status(500).json({ message: 'Server error' });
@@ -147,14 +139,41 @@ exports.unblockUser = async (req, res) => {
     }
 };
 
+
 // Get followers of a user
+exports.getFollowing = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Convert userId to ObjectId only if it's a valid string
+        const queryUserId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+
+        const following = await UserRelationships.find({ followerId: queryUserId, relationshipType: 'user' })
+            .populate('followingId', 'username displayName profileImage')
+            .exec();
+
+        console.log('Following relationships found:', following);
+
+        res.json(following);
+    } catch (error) {
+        console.error('Error getting following:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
 exports.getFollowers = async (req, res) => {
     try {
         const { userId } = req.params;
 
-        const followers = await UserRelationships.find({ followingId: userId, relationshipType: 'user' })
-            .populate('followerId', 'username displayName profileImage') // Only select certain fields from the user model
+        // Convert userId to ObjectId only if it's a valid string
+        const queryUserId = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+
+        const followers = await UserRelationships.find({ followingId: queryUserId, relationshipType: 'user' })
+            .populate('followerId', 'username displayName profileImage')
             .exec();
+
+        console.log('Followers relationships found:', followers);
 
         res.json(followers);
     } catch (error) {
@@ -163,21 +182,6 @@ exports.getFollowers = async (req, res) => {
     }
 };
 
-// Get following users for a user
-exports.getFollowing = async (req, res) => {
-    try {
-        const { userId } = req.params;
-
-        const following = await UserRelationships.find({ followerId: userId, relationshipType: 'user' })
-            .populate('followingId', 'username displayName profileImage') // Only select certain fields from the user model
-            .exec();
-
-        res.json(following);
-    } catch (error) {
-        console.error('Error getting following:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-};
 
 // Get mutual followers between two users
 exports.getMutualFollowers = async (req, res) => {
@@ -203,6 +207,32 @@ exports.getMutualFollowers = async (req, res) => {
         res.json({ mutualFollowers, mutualFollowing, isMutual });
     } catch (error) {
         console.error('Error finding mutual followers:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Check if a user is following another user
+exports.checkFollowStatus = async (req, res) => {
+    try {
+        const { followerId, followingId } = req.body;
+
+        if (!followerId || !followingId) {
+            return res.status(400).json({ message: 'Both followerId and followingId are required' });
+        }
+
+        const relationship = await UserRelationships.findOne({
+            followerId: followerId,
+            followingId: followingId,
+            status: 'active' // Only consider active relationships
+        });
+
+        if (relationship) {
+            res.json({ isFollowing: true });
+        } else {
+            res.json({ isFollowing: false });
+        }
+    } catch (error) {
+        console.error('Error checking follow status:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };

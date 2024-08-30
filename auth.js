@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('./models/User'); // Adjust the path as needed
+const jwt = require('jsonwebtoken');
 
 // Function to handle user login or sign-up
 async function handleUserLogin(req, res) {
@@ -36,24 +36,25 @@ async function handleUserLogin(req, res) {
                     otherPronouns: user.userInfo.otherPronouns,
                     profileImage: user.profileImage,
                     phone: user.phone,
-                    displayName: user.displayName,   // Include displayName
-                    profileURL: user.profileURL      // Include profileURL
+                    displayName: user.displayName,
+                    profileURL: user.profileURL
                 }
             });
         } else {
-            // Create a new user
+            // Generate the new ObjectId first
             const newUserId = new mongoose.Types.ObjectId();
-            const newUsername = newUserId.toString(); // Use userId as the default username
+            const newUserIdString = newUserId.toString();
 
+            // Create a new user with all required fields initialized
             user = new User({
-                userId: newUserId,
-                username: newUsername, // Directly assign username here
+                _id: newUserId,               // Set _id explicitly
+                userId: newUserIdString,      // Set userId as string representation of _id
+                username: newUserIdString,    // Set username as string representation of _id
+                displayName: newUserIdString, // Set displayName as string representation of _id
+                profileURL: `maar.world/xplorer/${newUserIdString}`, // Set profileURL based on _id
                 email,
                 role: 'Listener',
-                displayName: newUsername, // Assign displayName as userId
-                profileURL: `maar.world/xplorer/${newUsername}`, // Assign profileURL based on userId
-                userInfo: { // Pass userInfo as an object
-                    username: newUsername,
+                userInfo: {
                     genderIdentity: 'Prefer not to reply',
                     pronouns: 'Prefer not to say'
                 }
@@ -62,6 +63,7 @@ async function handleUserLogin(req, res) {
             // Log user object before saving
             console.log('Saving new user:', user);
 
+            // Save the user
             await user.save();
 
             const payload = {
@@ -85,8 +87,8 @@ async function handleUserLogin(req, res) {
                     otherPronouns: user.userInfo.otherPronouns,
                     profileImage: user.profileImage,
                     phone: user.phone,
-                    displayName: user.displayName,   // Include displayName
-                    profileURL: user.profileURL      // Include profileURL
+                    displayName: user.displayName,
+                    profileURL: user.profileURL
                 }
             });
         }

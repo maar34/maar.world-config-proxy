@@ -54,7 +54,7 @@ app.use('/api/tracks', trackRoutes);
 app.use('/api', authRoutes);
 
 // Mount the UserRelationships routes with a prefix
-app.use('/api/user-relationships', userRelationshipsRoutes); // <-- New Line
+app.use('/api', userRelationshipsRoutes); // <-- New Line
 
 // Magic Link Authentication Route
 app.post('/login', async (req, res) => {

@@ -22,6 +22,7 @@ router.get('/getPublicProfile', async (req, res) => {
         res.json({
             displayName: user.displayName,
             username: user.username,
+            userId: user.userId,
             pronouns: user.userInfo?.pronouns || '',
             otherPronouns: user.userInfo?.otherPronouns || '',
             role: user.role,

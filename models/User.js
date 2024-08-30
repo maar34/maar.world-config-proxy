@@ -14,7 +14,7 @@ const userInfoSchema = new mongoose.Schema({
     ], 
     default: 'Prefer not to reply' 
   },
-  customGenderIdentity: { type: String }, // For custom gender identity if 'Not Listed' is selected
+  customGenderIdentity: { type: String }, 
   pronouns: { 
     type: String, 
     enum: [
@@ -28,27 +28,30 @@ const userInfoSchema = new mongoose.Schema({
     ],
     default: 'Prefer not to say'
   },
-  otherPronouns: { type: String }, // For custom pronouns if 'Other' is selected
-  updatedAt: { type: Date, default: Date.now } // Track when this info was last updated
+  otherPronouns: { type: String }, 
+  updatedAt: { type: Date, default: Date.now }
 });
 
 const userSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId(), unique: true }, 
+  userId: { 
+    type: String, 
+    unique: true 
+  },
   username: { type: String, required: true, unique: true },
-  displayName: { type: String }, // New field
-  profileURL: { type: String }, // New field
-  city: { type: String }, // New field
-  country: { type: String }, // New field
-  bio: { type: String, maxlength: 200 }, // New field
-  customLinks: [{ type: String }], // New field (array of strings for up to 3 custom links)
-  userInfo: userInfoSchema, // Nesting userInfoSchema
+  displayName: { type: String },
+  profileURL: { type: String },
+  city: { type: String },
+  country: { type: String },
+  bio: { type: String, maxlength: 200 },
+  customLinks: [{ type: String }],
+  userInfo: userInfoSchema,
   email: { type: String, required: true, unique: true },
   role: { type: String, default: 'Listener' }, 
   phone: String,
   profileImage: { type: String },
-  privateAccount: { type: Boolean, default: false }, // field to indicate if the account is private / this options is not implemented yet in front end
-  followersCount: { type: Number, default: 0 }, // field to track followers count
-  followingCount: { type: Number, default: 0 }, // field to track following count
+  privateAccount: { type: Boolean, default: false },
+  followersCount: { type: Number, default: 0 },
+  followingCount: { type: Number, default: 0 },
   userPlayback: {
     playCount: { type: Number, default: 0 },
     playDuration: { type: Number, default: 0 },
@@ -57,7 +60,13 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// Ensure that `userId` is used as a unique identifier in addition to `_id`.
-userSchema.index({ userId: 1 }, { unique: true });
+// Middleware to set `userId` before validation
+userSchema.pre('validate', function(next) { 
+  if (!this.userId) {
+    // Ensure userId is the string representation of _id
+    this.userId = this._id.toString();
+  }
+  next();
+});
 
 module.exports = mongoose.model('User', userSchema);

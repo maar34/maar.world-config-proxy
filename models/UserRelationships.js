@@ -8,11 +8,12 @@ const userRelationshipsSchema = new mongoose.Schema({
   notificationsEnabled: { type: Boolean, default: true }, // Whether notifications are enabled for this relationship
   notes: { type: String, maxlength: 500 }, // Optional notes about the relationship (e.g., reason for follow, categorization)
   relationshipType: { type: String, enum: ['user', 'ip'], default: 'user' }, // New field to distinguish between user and IP following
-  category: { type: String, maxlength: 100 } // Categorization of the relationship (e.g., "Friends", "Colleagues")
+  category: { type: String, maxlength: 100 }, // Categorization of the relationship (e.g., "Friends", "Colleagues")
 }, { 
-  timestamps: true
+  timestamps: true, 
+  indexes: [
+    { fields: { followerId: 1, followingId: 1 }, unique: true } // Ensure uniqueness and fast lookups
+  ]
 });
-
-userRelationshipsSchema.index({ followerId: 1, followingId: 1 }, { unique: true }); // Ensure uniqueness and fast lookups
 
 module.exports = mongoose.model('UserRelationships', userRelationshipsSchema);
