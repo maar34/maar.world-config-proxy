@@ -46,6 +46,9 @@ const userSchema = new mongoose.Schema({
   customLinks: [{ type: String }],
   userInfo: userInfoSchema,
   email: { type: String, required: true, unique: true },
+  interplanetaryPlayersOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'InterplanetaryPlayer' }], // Ownership of players
+  playlistsOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Playlist' }], // Ownership of playlists
+  tracksOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Track' }], // Ownership of tracks
   role: { type: String, default: 'Listener' }, 
   phone: String,
   profileImage: { type: String },
@@ -60,6 +63,7 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+
 // Middleware to set `userId` before validation
 userSchema.pre('validate', function(next) { 
   if (!this.userId) {
@@ -68,5 +72,10 @@ userSchema.pre('validate', function(next) {
   }
   next();
 });
+
+// Indexes for efficient querying
+userSchema.index({ username: 1 });
+userSchema.index({ email: 1 });
+
 
 module.exports = mongoose.model('User', userSchema);
