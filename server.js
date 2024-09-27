@@ -35,8 +35,8 @@ app.use(cors({
     }
     return callback(null, true);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow necessary HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow necessary headers
+  methods: ['GET', 'POST'], // Allow these HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
 }));
 
 // Connect to MongoDB
@@ -46,7 +46,12 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Mount Routes with Specific Prefixes
+// THERES SOMETHING DUPLICATED AND WE NEED THIS TO WORK WITH LINK 
+  app.use('/api', configIpRoutes); 
+app.use('/api', trackRoutes); 
+app.use('/api', profileRoutes); // Prefix all routes in profileRoutes.js with /api 
+
+// Use the routes with middleware applied
 app.use('/api/config', configIpRoutes);
 app.use('/api/tracks', trackRoutes);
 app.use('/api/profile', profileRoutes);
@@ -54,7 +59,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/userRelationships', userRelationshipsRoutes);
 app.use('/api/playlists', playlistRoutes); // Mount Playlist Routes
 
-// Magic Link Authentication Routes
+// Magic Link Authentication Route
 app.post('/login', async (req, res) => {
   const didToken = req.headers.authorization.split('Bearer ').pop();
 
