@@ -14,10 +14,13 @@ const authenticate = require('./auth'); // Import from the root folder
 const jwt = require('jsonwebtoken'); // For securely passing user info
 const authRoutes = require('./routes/authRoutes'); 
 const profileRoutes = require('./routes/profileRoutes'); // Adjust the path as needed
+const playlistRoutes = require('./routes/playlistRoutes'); // Adjust the path as necessary
 
 dotenv.config();
 
 const app = express();
+
+// Middleware Setup
 app.use(bodyParser.json({ limit: '200mb' }));
 app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
 
@@ -32,31 +35,26 @@ app.use(cors({
     }
     return callback(null, true);
   },
-  methods: ['GET', 'POST'], // Allow these HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow necessary HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow necessary headers
 }));
 
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 60000, // 1 minute
   socketTimeoutMS: 120000,         // 2 minutes
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-app.use('/api', configIpRoutes);
-app.use('/api', trackRoutes);
-app.use('/api', profileRoutes); // Prefix all routes in profileRoutes.js with /api
-
-// Use the routes with middleware applied
+// Mount Routes with Specific Prefixes
 app.use('/api/config', configIpRoutes);
 app.use('/api/tracks', trackRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/userRelationships', userRelationshipsRoutes);
+app.use('/api/playlists', playlistRoutes); // Mount Playlist Routes
 
-// Use the routes with a prefix
-app.use('/api', authRoutes);
-
-// Mount the UserRelationships routes with a prefix
-app.use('/api', userRelationshipsRoutes); // <-- New Line
-
-// Magic Link Authentication Route
+// Magic Link Authentication Routes
 app.post('/login', async (req, res) => {
   const didToken = req.headers.authorization.split('Bearer ').pop();
 
@@ -87,6 +85,7 @@ app.post('/login', async (req, res) => {
 
       res.json({ token });
   } catch (error) {
+      console.error('Login error:', error);
       res.status(401).json({ error: 'Authentication failed' });
   }
 });
@@ -99,6 +98,7 @@ app.post('/logout', async (req, res) => {
     await magic.users.logoutByToken(didToken);
     res.json({ message: 'User logged out' });
   } catch (error) {
+    console.error('Logout error:', error);
     res.status(401).json({ error: 'Logout failed' });
   }
 });
@@ -139,6 +139,7 @@ app.get('/metadata/sonicEngines.json', async (req, res) => {
   }
 });
 
+// Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
@@ -147,6 +148,7 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
+// Start Server
 const PORT = process.env.PORT || 3001;
 const server = http.createServer(app);
 
