@@ -62,6 +62,8 @@ const IPSocialSchema = new Schema({
 
 // Define the main Config Schema
 const ConfigSchema = new Schema({
+  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},  // The user who owns the interplanetary player
+  privacy: { type: String, default: 'private' },
   ipId: { type: Number, required: true },  // IP ID
   artName: { type: String, required: true },  // Name of the artwork
   sciName: { type: String, required: true },  // Scientific name of the exoplanet

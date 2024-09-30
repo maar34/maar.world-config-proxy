@@ -4,6 +4,7 @@ const Exoplanet = require('../models/Exoplanet');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+const User = require('../models/User'); // Add this if not already present
 
 // Create directory if it doesn't exist
 const createUploadPath = (uploadPath) => {
@@ -52,10 +53,22 @@ exports.uploadModelFiles = (req, res) => {
 // Other methods remain unchanged
 exports.createConfigIntPlayer = async (req, res) => {
   try {
+    const { ownerId } = req.body;
+
+    if (!ownerId) {
+      return res.status(400).json({ error: 'Owner ID is required' });
+    }
+
+    // Create new ConfigIntPlayer (interplanetary player)
     const config = new ConfigIntPlayer(req.body);
     await config.save();
-    res.status(201).send(config);
+
+    // Update the user with the new interplanetary player
+    await User.findByIdAndUpdate(ownerId, { $push: { interplanetaryPlayersOwned: config._id } });
+
+    res.status(201).json({ success: true, message: 'Interplanetary player created successfully!', config });
   } catch (err) {
+    console.error('Error creating interplanetary player:', err);
     res.status(400).send(err);
   }
 };
@@ -91,5 +104,35 @@ exports.fetchSonicEngineData = async (req, res) => {
   } catch (error) {
     console.error('Error fetching sonic engines:', error);
     res.status(500).send({ error: 'Error fetching sonic engines' });
+  }
+};
+
+
+exports.deleteConfigIntPlayer = async (req, res) => {
+  try {
+    const { playerId } = req.params;
+
+    // Find and delete the interplanetary player
+    const player = await ConfigIntPlayer.findByIdAndDelete(playerId);
+
+    if (!player) {
+      return res.status(404).json({ success: false, message: 'Interplanetary player not found' });
+    }
+
+    // Remove the player from the user's interplanetaryPlayersOwned array
+    await User.findByIdAndUpdate(player.ownerId, {
+      $pull: { interplanetaryPlayersOwned: playerId }
+    });
+
+    // Optionally, clean up any associated files (e.g., models, textures)
+    const playerFolder = path.join(__dirname, `../uploads/models/${playerId}`);
+    if (fs.existsSync(playerFolder)) {
+      fs.rmSync(playerFolder, { recursive: true, force: true });
+    }
+
+    res.json({ success: true, message: 'Interplanetary player deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting interplanetary player:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };

@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const configIntPlayerController = require('../controllers/ConfigIntPlayerController');
-const exoplanetController = require('../controllers/ExoplanetController'); // Ensure this path is correct
+const exoplanetController = require('../controllers/ExoplanetController'); 
 const { verifyJWT, requireRole } = require('../utils/requireRole');
+const trackController = require('../controllers/TrackController'); 
 
 console.log('Registering routes...');
 
@@ -11,6 +12,11 @@ router.get('/test', (req, res) => {
   console.log('Test route hit');
   res.send('Test route is working!');
 });
+
+// Route to handle audio file uploads
+router.post('/uploadTrackFiles/:trackId', trackController.uploadTrackFiles);
+
+router.post('/submitTrackData', trackController.submitTrackData);
 
 // Routes for creating and fetching configuration players 
 // Access restricted to 'Admin' and 'Super Admin'

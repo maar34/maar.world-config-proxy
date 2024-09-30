@@ -3,6 +3,7 @@
 const mongoose = require('mongoose');
 
 const TrackSchema = new mongoose.Schema({
+    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},  // The user who owns the track
     exoplanet: { type: String, required: true },
     artistNames: [
         {

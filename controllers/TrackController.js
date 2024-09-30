@@ -2,15 +2,16 @@ const Track = require('../models/Track');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+const User = require('../models/User'); // Add this if not already present
 
 // Step 1: Handle track metadata submission
 exports.submitTrackData = async (req, res) => {
     try {
-        // Validate incoming JSON data
-        const { exoplanet, artists, trackName, type, genre, mood, additionalTags, description, credits, privacy, releaseDate, licence, enableDirectDownloads } = req.body;
+        const { ownerId, exoplanet, artists, trackName, type, genre, mood, additionalTags, description, credits, privacy, releaseDate, licence, enableDirectDownloads } = req.body;
 
-        if (!exoplanet || !artists || !trackName) {
-            return res.status(400).json({ error: 'Required fields missing.' });
+        // Validate required fields
+        if (!ownerId || !exoplanet || !artists || !trackName) {
+            return res.status(400).json({ error: 'Required fields missing. Make sure ownerId, exoplanet, artists, and trackName are provided.' });
         }
 
         // Validate that at least one artist is provided
@@ -20,8 +21,9 @@ exports.submitTrackData = async (req, res) => {
 
         // Create a new track instance
         const newTrack = new Track({
+            ownerId,
             exoplanet,
-            artistNames: artists,  // This is an array of objects with name and genderIdentity
+            artistNames: artists,
             trackName,
             type,
             genre,
@@ -35,12 +37,15 @@ exports.submitTrackData = async (req, res) => {
             enableDirectDownloads,
             audioFileWAV: '',
             audioFileMP3: '',
-            coverImage: ''  // Initialize cover image field
+            coverImage: ''
         });
 
         // Save the track and get the trackId
         await newTrack.save();
         const trackId = newTrack._id;
+
+        // Update the user with the new track
+        await User.findByIdAndUpdate(ownerId, { $push: { tracksOwned: trackId } });
 
         res.status(201).json({ trackId });
     } catch (error) {
@@ -48,7 +53,9 @@ exports.submitTrackData = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-// Step 2: Handle audio file uploads and cover image upload
+
+
+
 exports.uploadTrackFiles = (req, res) => {
     const { trackId } = req.params;
 
@@ -131,4 +138,34 @@ exports.uploadTrackFiles = (req, res) => {
             res.status(500).json({ error: 'Internal server error' });
         }
     });
+};
+
+
+
+exports.deleteTrack = async (req, res) => {
+    try {
+        const { trackId } = req.params;
+
+        const track = await Track.findByIdAndDelete(trackId);
+
+        if (!track) {
+            return res.status(404).json({ success: false, message: 'Track not found' });
+        }
+
+        // Remove the track from the user's tracksOwned
+        await User.findByIdAndUpdate(track.ownerId, {
+            $pull: { tracksOwned: trackId }
+        });
+
+        // Optionally, clean up any associated files (e.g., audio files)
+        const trackFolder = path.join(__dirname, `../uploads/tracks/${trackId}`);
+        if (fs.existsSync(trackFolder)) {
+            fs.rmSync(trackFolder, { recursive: true, force: true });
+        }
+
+        res.json({ success: true, message: 'Track deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting track:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 };
