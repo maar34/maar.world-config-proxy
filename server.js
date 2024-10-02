@@ -12,9 +12,10 @@ const magic = require('./auth'); // Import the Magic authentication module
 const User = require('./models/User'); // Import the User model
 const authenticate = require('./auth'); // Import from the root folder
 const jwt = require('jsonwebtoken'); // For securely passing user info
-const authRoutes = require('./routes/authRoutes'); 
+//const authRoutes = require('./routes/authRoutes'); 
 const profileRoutes = require('./routes/profileRoutes'); // Adjust the path as needed
 const playlistRoutes = require('./routes/playlistRoutes'); // Adjust the path as necessary
+const soundEnginesRoutes = require('./routes/soundEnginesRoutes');
 
 dotenv.config();
 
@@ -55,9 +56,10 @@ app.use('/api', profileRoutes); // Prefix all routes in profileRoutes.js with /a
 app.use('/api/config', configIpRoutes);
 app.use('/api/tracks', trackRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/auth', authRoutes);
+//app.use('/api/auth', authRoutes);
 app.use('/api/userRelationships', userRelationshipsRoutes);
 app.use('/api/playlists', playlistRoutes); // Mount Playlist Routes
+app.use('/api/soundEngines', soundEnginesRoutes); // Correctly mount soundEngine routes
 
 // Magic Link Authentication Route
 app.post('/login', async (req, res) => {
