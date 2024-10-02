@@ -89,10 +89,6 @@ const soundEngineSchema = new mongoose.Schema({
       default: 0.0
     }
   },
-  regenState: {
-    type: Boolean,
-    default: false
-  },
   sonificationState: {
     type: Boolean,
     default: false

@@ -44,20 +44,24 @@ const configureUpload = (uploadPath) => {
 };
 
 // Helper to revert database and files upon error
-const revertChangesOnError = async (id, model, directoryPath) => {
+const revertChangesOnError = async (soundEngineId, ownerId, soundEngineFolder) => {
     try {
-        await model.findByIdAndDelete(id); // Revert database changes
-        deleteFilesInDirectory(directoryPath); // Delete uploaded files
+        // Revert the SoundEngine document
+        await SoundEngine.findByIdAndDelete(soundEngineId);
+        // Remove the engine from the user's list
+        await User.findByIdAndUpdate(ownerObjectId, { $push: { enginesOwned: soundEngineId } });
+        // Delete associated files
+        deleteFilesInDirectory(soundEngineFolder);
     } catch (err) {
         console.error('Error during rollback:', err);
     }
 };
 
+// Create Sound Engine
 exports.createSoundEngine = [
     configureUpload(path.join(__dirname, '../uploads/soundEngines')), // Multer upload configuration
     async (req, res) => {
         try {
-            // Extract the necessary fields from req.body
             const {
                 ownerId,
                 availability,
@@ -72,20 +76,16 @@ exports.createSoundEngine = [
                 credits
             } = req.body;
 
-            // Convert ownerId to ObjectId
             const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
 
-            // Validate required fields
             if (!ownerId || !availability || !developerUsername || !soundEngineName) {
                 return res.status(400).json({ message: 'Missing required fields.' });
             }
 
-            // Parse params if needed
             const parsedXParam = xParam ? JSON.parse(xParam) : {};
             const parsedYParam = yParam ? JSON.parse(yParam) : {};
             const parsedZParam = zParam ? JSON.parse(zParam) : {};
 
-            // Create a new SoundEngine instance
             const newSoundEngine = new SoundEngine({
                 ownerId: ownerObjectId,
                 availability,
@@ -100,22 +100,17 @@ exports.createSoundEngine = [
                 credits
             });
 
-            // Save the SoundEngine document to the database to get the soundEngineId
             await newSoundEngine.save();
             const soundEngineId = newSoundEngine._id;
 
-            // Create a folder with the soundEngineId
             const uploadDir = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
-            }
+            ensureDirectoryExistence(uploadDir);
 
-            // Move the uploaded files into the newly created folder
             if (req.files && req.files.soundEngineImage) {
                 const imagePath = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineImage[0].filename}`;
                 const oldImagePath = req.files.soundEngineImage[0].path;
                 const newImagePath = path.join(uploadDir, req.files.soundEngineImage[0].filename);
-                fs.renameSync(oldImagePath, newImagePath); // Move the image to the new folder
+                fs.renameSync(oldImagePath, newImagePath);
                 newSoundEngine.soundEngineImage = imagePath;
             }
 
@@ -123,15 +118,15 @@ exports.createSoundEngine = [
                 const jsonFilePath = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineFile[0].filename}`;
                 const oldJsonFilePath = req.files.soundEngineFile[0].path;
                 const newJsonFilePath = path.join(uploadDir, req.files.soundEngineFile[0].filename);
-                fs.renameSync(oldJsonFilePath, newJsonFilePath); // Move the JSON file to the new folder
+                fs.renameSync(oldJsonFilePath, newJsonFilePath);
                 newSoundEngine.soundEngineFile = jsonFilePath;
             }
 
-            // Save the updated SoundEngine with file paths
             await newSoundEngine.save();
 
-            // Update the user with the new sound engine
-            await User.findByIdAndUpdate(ownerObjectId, { $push: { soundEnginesOwned: soundEngineId } });
+            // Update user with the new sound engine
+            const updatedUser = await User.findByIdAndUpdate(ownerObjectId, { $push: { enginesOwned: soundEngineId } }, { new: true });
+            console.log('Updated User after adding engine:', updatedUser);
 
             res.status(201).json({ success: true, message: 'Sound Engine created successfully!', soundEngine: newSoundEngine });
         } catch (error) {
@@ -171,11 +166,10 @@ exports.updateSoundEngine = [
             if (req.body.sonificationState) soundEngine.sonificationState = req.body.sonificationState;
             if (req.body.credits) soundEngine.credits = req.body.credits;
 
-            // Use the soundEngineId to organize the uploads folder
+            // Handle file uploads in soundEngineId folder
             const uploadDir = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
-            ensureDirectoryExistence(uploadDir); // Ensure directory exists
+            ensureDirectoryExistence(uploadDir);
 
-            // Handle file uploads
             if (req.files && req.files.soundEngineImage) {
                 const imagePath = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineImage[0].filename}`;
                 const oldImagePath = req.files.soundEngineImage[0].path;
@@ -202,7 +196,6 @@ exports.updateSoundEngine = [
 ];
 
 // Delete Sound Engine
-// Delete Sound Engine
 exports.deleteSoundEngine = async (req, res) => {
     try {
         const { soundEngineId } = req.params;
@@ -214,13 +207,12 @@ exports.deleteSoundEngine = async (req, res) => {
         }
 
         // Remove the sound engine from the user's list
-        await User.findByIdAndUpdate(soundEngine.ownerId, {
-            $pull: { soundEnginesOwned: soundEngineId }
-        });
+        await User.findByIdAndUpdate(soundEngine.ownerId, { $pull: { enginesOwned: soundEngineId } });
+
 
         // Clean up associated files in the soundEngineId folder
         const soundEngineFolder = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
-        deleteFilesInDirectory(soundEngineFolder); // Delete the entire folder with files
+        deleteFilesInDirectory(soundEngineFolder);
 
         res.json({ success: true, message: 'Sound Engine deleted successfully' });
     } catch (error) {
