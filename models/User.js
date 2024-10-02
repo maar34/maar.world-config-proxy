@@ -47,6 +47,7 @@ const userSchema = new mongoose.Schema({
   userInfo: userInfoSchema,
   email: { type: String, required: true, unique: true },
   interplanetaryPlayersOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'InterplanetaryPlayer' }], // Ownership of players
+  enginesOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sound Engines' }], // Add this field
   playlistsOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Playlist' }], // Ownership of playlists
   tracksOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Track' }], // Add this field
   role: { type: String, default: 'Listener' }, 
