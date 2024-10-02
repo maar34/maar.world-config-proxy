@@ -1,8 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const configIntPlayerController = require('../controllers/ConfigIntPlayerController');
-const exoplanetController = require('../controllers/ExoplanetController'); 
-const { verifyJWT, requireRole } = require('../utils/requireRole');
 const trackController = require('../controllers/TrackController'); 
 
 console.log('Registering routes...');
@@ -16,7 +13,26 @@ router.get('/test', (req, res) => {
 // Route to handle audio file uploads
 router.post('/uploadTrackFiles/:trackId', trackController.uploadTrackFiles);
 
+// Route to handle track metadata submission
 router.post('/submitTrackData', trackController.submitTrackData);
+
+// Route to fetch track details by trackId
+router.get('/tracks/:trackId', trackController.getTrackDetails);
+
+// Route to fetch all tracks owned by a specific user
+router.get('/user/:userId/tracks', trackController.getUserTracks);
+
+console.log('Routes registered');
+
+module.exports = router;
+
+
+/*
+THIS DONT BELONG HERE
+const configIntPlayerController = require('../controllers/ConfigIntPlayerController');
+const exoplanetController = require('../controllers/ExoplanetController'); 
+const { verifyJWT, requireRole } = require('../utils/requireRole');
+
 
 // Routes for creating and fetching configuration players 
 // Access restricted to 'Admin' and 'Super Admin'
@@ -41,6 +57,11 @@ router.get('/admin/configurations', verifyJWT, requireRole('Admin'), (req, res) 
   res.json({ message: 'Admin configurations' });
 });
 
-console.log('Routes registered');
 
-module.exports = router;
+
+
+
+
+
+
+*/

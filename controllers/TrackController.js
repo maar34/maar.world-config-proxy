@@ -169,3 +169,61 @@ exports.deleteTrack = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+
+// Fetch track details based on trackId
+exports.getTrackDetails = async (req, res) => {
+    try {
+        const { trackId } = req.params;
+
+        // Find the track by ID
+        const track = await Track.findById(trackId);
+
+        if (!track) {
+            return res.status(404).json({ success: false, message: 'Track not found' });
+        }
+
+        // Return only relevant fields
+        const trackData = {
+            exoplanet: track.exoplanet,
+            artistNames: track.artistNames,  // Array of artists
+            trackName: track.trackName,
+            privacy: track.privacy,
+            releaseDate: track.releaseDate,
+        };
+
+        res.status(200).json({ success: true, track: trackData });
+    } catch (error) {
+        console.error('Error fetching track details:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Fetch all tracks owned by a specific user
+exports.getUserTracks = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Find the user by ID
+        const user = await User.findById(userId).populate('tracksOwned');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Return track details for each track owned by the user
+        const tracks = user.tracksOwned.map(track => ({
+            artistNames: track.artistNames,
+            trackName: track.trackName,
+            privacy: track.privacy,
+            releaseDate: track.releaseDate,
+            soundEngine: track.soundEngine,
+            exoplanet: track.exoplanet,
+
+        }));
+
+        res.status(200).json({ success: true, tracks });
+    } catch (error) {
+        console.error('Error fetching user tracks:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
