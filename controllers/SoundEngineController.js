@@ -137,12 +137,13 @@ exports.createSoundEngine = [
 ];
 
 // Update Sound Engine
+// Update Sound Engine
 exports.updateSoundEngine = [
     configureUpload(path.join(__dirname, '../uploads/soundEngines')), // Multer upload
     async (req, res) => {
         try {
             const { soundEngineId } = req.params;
-            const { ownerId } = req.body;
+            const { ownerId, existingImagePath, existingJsonFilePath } = req.body;
 
             const soundEngine = await SoundEngine.findById(soundEngineId);
             if (!soundEngine) {
@@ -166,24 +167,17 @@ exports.updateSoundEngine = [
             if (req.body.sonificationState) soundEngine.sonificationState = req.body.sonificationState;
             if (req.body.credits) soundEngine.credits = req.body.credits;
 
-            // Handle file uploads in soundEngineId folder
-            const uploadDir = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
-            ensureDirectoryExistence(uploadDir);
-
+            // Handle file uploads or use existing paths
             if (req.files && req.files.soundEngineImage) {
-                const imagePath = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineImage[0].filename}`;
-                const oldImagePath = req.files.soundEngineImage[0].path;
-                const newImagePath = path.join(uploadDir, req.files.soundEngineImage[0].filename);
-                fs.renameSync(oldImagePath, newImagePath); // Move the image to the new folder
-                soundEngine.soundEngineImage = imagePath;
+                soundEngine.soundEngineImage = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineImage[0].filename}`;
+            } else if (existingImagePath && !req.files.soundEngineImage) {
+                soundEngine.soundEngineImage = existingImagePath; // Use existing image path if no new image is uploaded
             }
 
             if (req.files && req.files.soundEngineFile) {
-                const jsonFilePath = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineFile[0].filename}`;
-                const oldJsonFilePath = req.files.soundEngineFile[0].path;
-                const newJsonFilePath = path.join(uploadDir, req.files.soundEngineFile[0].filename);
-                fs.renameSync(oldJsonFilePath, newJsonFilePath); // Move the JSON file to the new folder
-                soundEngine.soundEngineFile = jsonFilePath;
+                soundEngine.soundEngineFile = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineFile[0].filename}`;
+            } else if (existingJsonFilePath && !req.files.soundEngineFile) {
+                soundEngine.soundEngineFile = existingJsonFilePath; // Use existing JSON file path if no new file is uploaded
             }
 
             const updatedSoundEngine = await soundEngine.save();
@@ -222,10 +216,10 @@ exports.deleteSoundEngine = async (req, res) => {
 };
 
 // Fetch Sound Engine by ID
+// Fetch Sound Engine by ID
 exports.getSoundEngineById = async (req, res) => {
     try {
         const { soundEngineId } = req.params;
-        const userId = req.query.userId;
 
         const soundEngine = await SoundEngine.findById(soundEngineId)
             .populate('ownerId', 'username displayName profileImage');
@@ -234,13 +228,16 @@ exports.getSoundEngineById = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Sound Engine not found' });
         }
 
-        const isOwner = soundEngine.ownerId._id.toString() === userId;
-        res.json({ success: true, soundEngine, canEdit: isOwner });
+        // Optionally check if the current user is the owner if you have authentication
+        // const isOwner = soundEngine.ownerId._id.toString() === req.user.id; // Assuming req.user.id is available from authentication
+
+        res.json({ success: true, soundEngine });
     } catch (error) {
         console.error('Error fetching sound engine:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+
 
 // Fetch all sound engines owned by a user
 exports.getSoundEnginesByOwner = async (req, res) => {

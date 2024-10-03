@@ -28,7 +28,7 @@ const playlistSchema = new mongoose.Schema({
 
     privacy: { 
         type: String, 
-        enum: ['public', 'private'], 
+        enum: ['public','collaborative','private'], 
         default: 'public' 
     }, // Privacy setting
     type: { // New Field
