@@ -46,10 +46,10 @@ const userSchema = new mongoose.Schema({
   customLinks: [{ type: String }],
   userInfo: userInfoSchema,
   email: { type: String, required: true, unique: true },
-  interplanetaryPlayersOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'InterplanetaryPlayer' }], // Ownership of players
-  enginesOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sound Engines' }], // Add this field
-  playlistsOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Playlist' }], // Ownership of playlists
-  tracksOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Track' }], // Add this field
+  interplanetaryPlayersOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'InterplanetaryPlayer' }], 
+  enginesOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sound Engines' }], 
+  playlistsOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Playlist' }], 
+  tracksOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Track' }], 
   role: { type: String, default: 'Listener' }, 
   phone: String,
   profileImage: { type: String },
@@ -61,9 +61,11 @@ const userSchema = new mongoose.Schema({
     playDuration: { type: Number, default: 0 },
     recDuration: { type: Number, default: 0 },
   },
+  preferences: { type: mongoose.Schema.Types.Mixed, default: {} }, // JSONB equivalent
+  last_login: { type: Date }, // Timestamp
+  subscription_status: { type: Boolean, default: false }, // Boolean
   createdAt: { type: Date, default: Date.now }
 });
-
 
 // Middleware to set `userId` before validation
 userSchema.pre('validate', function(next) { 
@@ -77,6 +79,5 @@ userSchema.pre('validate', function(next) {
 // Indexes for efficient querying
 userSchema.index({ username: 1 });
 userSchema.index({ email: 1 });
-
 
 module.exports = mongoose.model('User', userSchema);

@@ -3,7 +3,7 @@ const router = express.Router();
 const configIntPlayerController = require('../controllers/ConfigIntPlayerController');
 const exoplanetController = require('../controllers/ExoplanetController'); // Ensure this path is correct
 const { verifyJWT, requireRole } = require('../utils/requireRole');
-const { handleUserLogin } = require('../auth'); // Adjust the path as necessary
+//const { handleUserLogin } = require('../auth'); // Adjust the path as necessary
 
 console.log('Registering routes...');
 
@@ -22,7 +22,7 @@ router.get('/configIntPlayers', configIntPlayerController.getConfigIntPlayers);
 router.post('/configIntPlayer', configIntPlayerController.createConfigIntPlayer); // set Int Player form in the database and write the Artistic name set by the user, then this planet is owned 
 router.post('/updateExoplanet', exoplanetController.updateExoplanet); // Ensure this route is correct
 
-router.post('/login', handleUserLogin);
+// router.post('/login', handleUserLogin);
 
 // Routes for fetching data to fill protoplanet form options 
 

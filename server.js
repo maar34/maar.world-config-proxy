@@ -1,5 +1,6 @@
+require('dotenv').config();
+
 const express = require('express');
-const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -8,16 +9,18 @@ const trackRoutes = require('./routes/trackRoutes');
 const userRelationshipsRoutes = require('./routes/userRelationshipsRoutes'); // Import the new UserRelationships routes
 const http = require('http');
 const rateLimit = require('express-rate-limit');
-const magic = require('./auth'); // Import the Magic authentication module
+//const magic = require('./auth'); // Import the Magic authentication module
 const User = require('./models/User'); // Import the User model
-const authenticate = require('./auth'); // Import from the root folder
+//const authenticate = require('./auth'); // Import from the root folder
 const jwt = require('jsonwebtoken'); // For securely passing user info
 //const authRoutes = require('./routes/authRoutes'); 
 const profileRoutes = require('./routes/profileRoutes'); // Adjust the path as needed
 const playlistRoutes = require('./routes/playlistRoutes'); // Adjust the path as necessary
 const soundEnginesRoutes = require('./routes/soundEnginesRoutes');
+const authRoutes = require('./routes/authRoutes'); 
 
-dotenv.config();
+
+
 
 const app = express();
 
@@ -26,7 +29,7 @@ app.use(bodyParser.json({ limit: '200mb' }));
 app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
 
 // CORS configuration
-const allowedOrigins = ['http://127.0.0.1:4000', 'http://localhost:4000', 'http://maar.world'];
+const allowedOrigins = ['http://127.0.0.1:4000', 'http://localhost:4000', 'http://127.0.0.1:4001', 'http://localhost:4001','http://maar.world'];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
@@ -48,18 +51,30 @@ mongoose.connect(process.env.MONGO_URI, {
   .catch(err => console.error('MongoDB connection error:', err));
 
 // THERES SOMETHING DUPLICATED AND WE NEED THIS TO WORK WITH LINK 
-  app.use('/api', configIpRoutes); 
+
+app.use('/api', configIpRoutes); 
 app.use('/api', trackRoutes); 
 app.use('/api', profileRoutes); // Prefix all routes in profileRoutes.js with /api 
 
 // Use the routes with middleware applied
-app.use('/api/config', configIpRoutes);
-app.use('/api/tracks', trackRoutes);
-app.use('/api/profile', profileRoutes);
-//app.use('/api/auth', authRoutes);
+
+app.use(express.json());  // Ensure body parsing middleware is enabled
+app.use('/api/auth', authRoutes);
+
+//app.use('/api/config', configIpRoutes);
+//app.use('/api/tracks', trackRoutes);
+//app.use('/api/profile', profileRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/userRelationships', userRelationshipsRoutes);
 app.use('/api/playlists', playlistRoutes); // Mount Playlist Routes
 app.use('/api/soundEngines', soundEnginesRoutes); // Correctly mount soundEngine routes
+
+
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);  // Logs the request method and URL
+  next();
+});
+
 
 // Magic Link Authentication Route
 app.post('/login', async (req, res) => {
@@ -85,11 +100,10 @@ app.post('/login', async (req, res) => {
 
       // Generate a JWT with the user's role
       const token = jwt.sign(
-          { email: user.email, role: user.role },
-          process.env.JWT_SECRET,
-          { expiresIn: '1h' }
-      );
-
+        { userId: session.user.id, email: session.user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+    );
       res.json({ token });
   } catch (error) {
       console.error('Login error:', error);
