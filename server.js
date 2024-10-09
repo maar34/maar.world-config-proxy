@@ -30,6 +30,7 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = ['http://127.0.0.1:4005', 'http://localhost:4005', 'http://127.0.0.1:4001', 'http://localhost:4001', 'http://maar.world'];
+
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
@@ -39,8 +40,8 @@ app.use(cors({
     }
     return callback(null, true);
   },
-  methods: ['GET', 'POST'], // Allow these HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"], // Allow these HTTP methods
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"], // Allow these headers
 }));
 
 // Connect to MongoDB
@@ -75,12 +76,10 @@ app.use((req, res, next) => {
 });
 
 
-*/
-
 // Route to fetch exoplanet data
 app.get('/metadata/exoplanets.json', async (req, res) => {
   try {
-    console.log('Fetching exoplanet data');
+  //  console.log('Fetching exoplanet data');
     const exoplanets = await Exoplanet.find({}).lean();
 
     console.log(`Found ${exoplanets.length} exoplanets`);
@@ -98,7 +97,6 @@ app.get('/metadata/exoplanets.json', async (req, res) => {
 // Route to fetch sonic engine data
 app.get('/metadata/sonicEngines.json', async (req, res) => {
   try {
-    console.log('Fetching sonic engines');
     const sonicEngines = await SonicEngine.findById('66ab5c2ba02d327c9e5671da').lean();
 
     if (sonicEngines) {

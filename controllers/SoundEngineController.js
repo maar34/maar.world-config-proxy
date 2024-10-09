@@ -48,18 +48,17 @@ const revertChangesOnError = async (soundEngineId, ownerId, soundEngineFolder) =
     try {
         // Revert the SoundEngine document
         await SoundEngine.findByIdAndDelete(soundEngineId);
-        // Remove the engine from the user's list
-        await User.findByIdAndUpdate(ownerObjectId, { $push: { enginesOwned: soundEngineId } });
+        // Remove the engine from the user's list using userId
+        await User.findOneAndUpdate({ userId: ownerId }, { $pull: { enginesOwned: soundEngineId } });
         // Delete associated files
         deleteFilesInDirectory(soundEngineFolder);
     } catch (err) {
         console.error('Error during rollback:', err);
     }
 };
-
 // Create Sound Engine
 exports.createSoundEngine = [
-    configureUpload(path.join(__dirname, '../uploads/soundEngines')), // Multer upload configuration
+    configureUpload(path.join(__dirname, '../uploads/soundEngines')),
     async (req, res) => {
         try {
             const {
@@ -76,9 +75,9 @@ exports.createSoundEngine = [
                 credits
             } = req.body;
 
-            const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
 
             if (!ownerId || !availability || !developerUsername || !soundEngineName) {
+                console.log('Missing required fields:', { ownerId, availability, developerUsername, soundEngineName });
                 return res.status(400).json({ message: 'Missing required fields.' });
             }
 
@@ -87,7 +86,7 @@ exports.createSoundEngine = [
             const parsedZParam = zParam ? JSON.parse(zParam) : {};
 
             const newSoundEngine = new SoundEngine({
-                ownerId: ownerObjectId,
+                ownerId, // Use userId as a string
                 availability,
                 developerUsername,
                 soundEngineName,
@@ -100,11 +99,16 @@ exports.createSoundEngine = [
                 credits
             });
 
+            console.log('New SoundEngine object created:', newSoundEngine);
+
             await newSoundEngine.save();
             const soundEngineId = newSoundEngine._id;
 
+            console.log('Sound Engine saved with ID:', soundEngineId);
+
             const uploadDir = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
             ensureDirectoryExistence(uploadDir);
+            //console.log('Upload directory ensured at:', uploadDir);
 
             if (req.files && req.files.soundEngineImage) {
                 const imagePath = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineImage[0].filename}`;
@@ -112,6 +116,7 @@ exports.createSoundEngine = [
                 const newImagePath = path.join(uploadDir, req.files.soundEngineImage[0].filename);
                 fs.renameSync(oldImagePath, newImagePath);
                 newSoundEngine.soundEngineImage = imagePath;
+                console.log('Sound engine image saved at:', imagePath);
             }
 
             if (req.files && req.files.soundEngineFile) {
@@ -120,13 +125,20 @@ exports.createSoundEngine = [
                 const newJsonFilePath = path.join(uploadDir, req.files.soundEngineFile[0].filename);
                 fs.renameSync(oldJsonFilePath, newJsonFilePath);
                 newSoundEngine.soundEngineFile = jsonFilePath;
+                console.log('Sound engine file saved at:', jsonFilePath);
             }
 
             await newSoundEngine.save();
+            console.log('Sound Engine object after file updates:', newSoundEngine);
 
-            // Update user with the new sound engine
-            const updatedUser = await User.findByIdAndUpdate(ownerObjectId, { $push: { enginesOwned: soundEngineId } }, { new: true });
-            console.log('Updated User after adding engine:', updatedUser);
+            // Update user's enginesOwned
+            const updatedUser = await User.findOneAndUpdate(
+                { userId: ownerId }, // Match by userId
+                { $push: { enginesOwned: soundEngineId } },
+                { new: true }
+            );
+
+         //   console.log('Updated User after adding engine:', updatedUser);
 
             res.status(201).json({ success: true, message: 'Sound Engine created successfully!', soundEngine: newSoundEngine });
         } catch (error) {
@@ -136,51 +148,63 @@ exports.createSoundEngine = [
     }
 ];
 
-// Update Sound Engine
-// Update Sound Engine
+
 exports.updateSoundEngine = [
-    configureUpload(path.join(__dirname, '../uploads/soundEngines')), // Multer upload
+    configureUpload(path.join(__dirname, '../uploads/soundEngines')),
     async (req, res) => {
+        console.log('Received method:', req.method); // Should log 'PATCH'
+        console.log('SoundEngine ID:', req.params.soundEngineId); // Should show the correct ID
+
         try {
             const { soundEngineId } = req.params;
             const { ownerId, existingImagePath, existingJsonFilePath } = req.body;
 
+            console.log('Update request received with ID:', soundEngineId);
+            console.log('Request body data:', req.body);
+
+            // Find the sound engine by ID
             const soundEngine = await SoundEngine.findById(soundEngineId);
             if (!soundEngine) {
+                console.log('SoundEngine not found for update:', soundEngineId);
                 return res.status(404).json({ message: 'Sound Engine not found' });
             }
-
-            // Ensure only the owner can update
-            if (soundEngine.ownerId.toString() !== ownerId) {
+                        // Ensure only the owner can update
+            if (soundEngine.ownerId !== ownerId) {
                 return res.status(403).json({ message: 'You do not have permission to edit this sound engine' });
             }
 
-            // Update fields
-            if (req.body.availability) soundEngine.availability = req.body.availability;
-            if (req.body.developerUsername) soundEngine.developerUsername = req.body.developerUsername;
-            if (req.body.soundEngineName) soundEngine.soundEngineName = req.body.soundEngineName;
-            if (req.body.color1) soundEngine.color1 = req.body.color1;
-            if (req.body.color2) soundEngine.color2 = req.body.color2;
-            if (req.body.xParam) soundEngine.xParam = JSON.parse(req.body.xParam);
-            if (req.body.yParam) soundEngine.yParam = JSON.parse(req.body.yParam);
-            if (req.body.zParam) soundEngine.zParam = JSON.parse(req.body.zParam);
-            if (req.body.sonificationState) soundEngine.sonificationState = req.body.sonificationState;
-            if (req.body.credits) soundEngine.credits = req.body.credits;
+            // Prepare the updates object with fallbacks for existing values
+            const updates = {
+                availability: req.body.availability || soundEngine.availability,
+                developerUsername: req.body.developerUsername || soundEngine.developerUsername,
+                soundEngineName: req.body.soundEngineName || soundEngine.soundEngineName,
+                color1: req.body.color1 || soundEngine.color1,
+                color2: req.body.color2 || soundEngine.color2,
+                sonificationState: req.body.sonificationState !== undefined ? req.body.sonificationState : soundEngine.sonificationState,
+                credits: req.body.credits || soundEngine.credits,
+                xParam: req.body.xParam ? JSON.parse(req.body.xParam) : soundEngine.xParam,
+                yParam: req.body.yParam ? JSON.parse(req.body.yParam) : soundEngine.yParam,
+                zParam: req.body.zParam ? JSON.parse(req.body.zParam) : soundEngine.zParam
+            };
 
-            // Handle file uploads or use existing paths
-            if (req.files && req.files.soundEngineImage) {
-                soundEngine.soundEngineImage = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineImage[0].filename}`;
-            } else if (existingImagePath && !req.files.soundEngineImage) {
-                soundEngine.soundEngineImage = existingImagePath; // Use existing image path if no new image is uploaded
-            }
+            // Handle image and JSON file updates
+            updates.soundEngineImage = req.files?.soundEngineImage?.[0]
+                ? `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineImage[0].filename}`
+                : existingImagePath || soundEngine.soundEngineImage;
 
-            if (req.files && req.files.soundEngineFile) {
-                soundEngine.soundEngineFile = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineFile[0].filename}`;
-            } else if (existingJsonFilePath && !req.files.soundEngineFile) {
-                soundEngine.soundEngineFile = existingJsonFilePath; // Use existing JSON file path if no new file is uploaded
-            }
+            updates.soundEngineFile = req.files?.soundEngineFile?.[0]
+                ? `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineFile[0].filename}`
+                : existingJsonFilePath || soundEngine.soundEngineFile;
 
-            const updatedSoundEngine = await soundEngine.save();
+            console.log('Updates being applied:', updates);
+
+            // Update the sound engine in the database
+            const updatedSoundEngine = await SoundEngine.findByIdAndUpdate(
+                soundEngineId,
+                updates,
+                { new: true }
+            );
+
             res.json({ success: true, message: 'Sound Engine updated successfully!', soundEngine: updatedSoundEngine });
         } catch (error) {
             console.error('Error updating sound engine:', error);
@@ -188,6 +212,7 @@ exports.updateSoundEngine = [
         }
     }
 ];
+
 
 // Delete Sound Engine
 exports.deleteSoundEngine = async (req, res) => {
@@ -200,9 +225,11 @@ exports.deleteSoundEngine = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Sound Engine not found' });
         }
 
-        // Remove the sound engine from the user's list
-        await User.findByIdAndUpdate(soundEngine.ownerId, { $pull: { enginesOwned: soundEngineId } });
-
+        // Remove the sound engine from the user's list using userId
+        await User.findOneAndUpdate(
+            { userId: soundEngine.ownerId },
+            { $pull: { enginesOwned: soundEngineId } }
+        );
 
         // Clean up associated files in the soundEngineId folder
         const soundEngineFolder = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
@@ -216,25 +243,23 @@ exports.deleteSoundEngine = async (req, res) => {
 };
 
 // Fetch Sound Engine by ID
-// Fetch Sound Engine by ID
+
 exports.getSoundEngineById = async (req, res) => {
     try {
         const { soundEngineId } = req.params;
+        console.log('Fetching details for soundEngineId:', soundEngineId);
 
-        const soundEngine = await SoundEngine.findById(soundEngineId)
-            .populate('ownerId', 'username displayName profileImage');
-
+        const soundEngine = await SoundEngine.findById(soundEngineId);
         if (!soundEngine) {
+            console.log('Sound Engine not found with ID:', soundEngineId);
             return res.status(404).json({ success: false, message: 'Sound Engine not found' });
         }
 
-        // Optionally check if the current user is the owner if you have authentication
-        // const isOwner = soundEngine.ownerId._id.toString() === req.user.id; // Assuming req.user.id is available from authentication
-
+        console.log('Found sound engine:', soundEngine);
         res.json({ success: true, soundEngine });
     } catch (error) {
-        console.error('Error fetching sound engine:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        console.error('Error fetching sound engine by ID:', error);
+        res.status(400).json({ success: false, message: 'Bad request' });
     }
 };
 
@@ -242,18 +267,51 @@ exports.getSoundEngineById = async (req, res) => {
 // Fetch all sound engines owned by a user
 exports.getSoundEnginesByOwner = async (req, res) => {
     try {
-        const { ownerId } = req.query;
+        // Extract the ownerId and username from the query parameters
+        const { ownerId, username } = req.query;
+        console.log('Received request with ownerId:', ownerId);
+        console.log('Received request with username:', username);
 
-        if (!ownerId) {
-            return res.status(400).json({ success: false, message: 'Owner ID is required' });
+        // Check if neither ownerId nor username was provided, and return a 400 error if true
+        if (!ownerId && !username) {
+            console.log('Either Owner ID or Username must be provided.');
+            return res.status(400).json({ success: false, message: 'Either Owner ID or Username is required' });
         }
 
-        const soundEngines = await SoundEngine.find({ ownerId })
-            .populate('ownerId', 'username displayName profileImage')
-            .sort({ createdAt: -1 });
+        // Build the user query based on the presence of ownerId or username
+        const userQuery = ownerId ? { userId: ownerId } : { username };
+        console.log('Searching for user with query:', userQuery);
 
-        res.json({ success: true, soundEngines });
+        // Find the user in the database using the userQuery
+        const user = await User.findOne(userQuery).select('userId username displayName profileImage enginesOwned');
+        if (!user) {
+            console.log('User not found for query:', userQuery);
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        console.log('Found user:', user);
+
+        // Use the `enginesOwned` array from the user to find the corresponding sound engines
+        console.log('Engines owned by user:', user.enginesOwned);
+        const soundEngines = await SoundEngine.find({ _id: { $in: user.enginesOwned } }).sort({ createdAt: -1 });
+        console.log('Found sound engines:', soundEngines);
+
+        // Attach user details to each sound engine for the response
+        const soundEnginesWithUser = soundEngines.map(engine => ({
+            ...engine.toObject(),
+            ownerDetails: {
+                userId: user.userId,
+                username: user.username,
+                displayName: user.displayName,
+                profileImage: user.profileImage
+            }
+        }));
+
+        // Send the response with the sound engines and user details
+        console.log('Returning sound engines with user details:', soundEnginesWithUser);
+        res.json({ success: true, soundEngines: soundEnginesWithUser });
     } catch (error) {
+        // Log the error and send a 500 response in case of an exception
         console.error('Error fetching sound engines:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }

@@ -3,10 +3,10 @@ const router = express.Router();
 const soundEngineController = require('../controllers/SoundEngineController'); 
 
 // Sound Engine Routes
-router.post('/', soundEngineController.createSoundEngine);
-router.get('/', soundEngineController.getSoundEnginesByOwner);
-router.get('/:soundEngineId', soundEngineController.getSoundEngineById);
-router.put('/:soundEngineId', soundEngineController.updateSoundEngine);
-router.delete('/:soundEngineId', soundEngineController.deleteSoundEngine);
+router.post('/', soundEngineController.createSoundEngine); // For creating a new sound engine
+router.get('/owner', soundEngineController.getSoundEnginesByOwner); // For fetching engines by ownerId or username in query
+router.get('/:soundEngineId', soundEngineController.getSoundEngineById); // For fetching a single engine by its ID
+router.patch('/:soundEngineId', soundEngineController.updateSoundEngine); // For updating a specific sound engine
+router.delete('/:soundEngineId', soundEngineController.deleteSoundEngine); // For deleting a specific sound engine
 
 module.exports = router;

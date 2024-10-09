@@ -86,10 +86,10 @@ async function checkSessionHandler(req, res) {
 // Handle user registration (this could be a separate route or incorporated into loginHandler)
 // Handle user registration
 async function registerHandler(req, res) {
-    const { email, password, username } = req.body; // Aceptar el nombre de usuario del cuerpo de la solicitud
+    const { email, password, username } = req.body;
 
     try {
-        // Verifica si el username es válido
+        // Verifica si el username es válido y no contiene '@'
         if (username && username.includes('@')) {
             return res.status(400).json({ message: 'Username cannot contain "@"' });
         }
@@ -99,15 +99,16 @@ async function registerHandler(req, res) {
 
         // Validar longitud del username
         if (finalUsername.length > 30) {
-            finalUsername = finalUsername.substring(0, 30); // Acortar a 30 caracteres
+            finalUsername = finalUsername.substring(0, 30);
         }
 
-        // Sustituir caracteres no permitidos por un guion bajo
-        finalUsername = finalUsername.replace(/[^a-zA-Z0-9._]+/g, '_');
+        // Sustituir caracteres no permitidos por un guion bajo,
+        // Permitimos solo letras, números, guiones y guiones bajos
+        finalUsername = finalUsername.replace(/[^a-zA-Z0-9_-]+/g, '_');
 
         // Validar que el username no exceda la longitud máxima después de la sustitución
         if (finalUsername.length > 30) {
-            finalUsername = finalUsername.substring(0, 30); // Asegúrate de acortar nuevamente si es necesario
+            finalUsername = finalUsername.substring(0, 30);
         }
 
         // Verificar si el username ya existe en la base de datos
@@ -131,7 +132,7 @@ async function registerHandler(req, res) {
         const newUser = new User({
             userId: session.id,
             email: session.email,
-            username: finalUsername,  // Usar el nombre de usuario final
+            username: finalUsername,
             role: 'Listener',  // Default role
         });
 

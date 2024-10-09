@@ -85,7 +85,7 @@ exports.getConfigIntPlayers = async (req, res) => {
 
 exports.fetchExoplanetData = async (req, res) => {
   try {
-    console.log('Fetching exoplanet data');
+   // console.log('Fetching exoplanet data');
     const exoplanets = await Exoplanet.find().lean();
     console.log('Fetched exoplanets:', exoplanets);
     res.status(200).send(exoplanets);
@@ -97,7 +97,7 @@ exports.fetchExoplanetData = async (req, res) => {
 
 exports.fetchSonicEngineData = async (req, res) => {
   try {
-    console.log('Fetching sonic engines');
+   // console.log('Fetching sonic engines');
     const sonicEngines = await SonicEngine.find().lean();
     console.log('Fetched sonic engines:', sonicEngines);
     res.status(200).send(sonicEngines);
