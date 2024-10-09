@@ -8,8 +8,8 @@ router.post('/unfollow', userRelationshipsController.unfollowUserOrIp);
 router.post('/blockUser', userRelationshipsController.blockUser);
 router.post('/unblockUser', userRelationshipsController.unblockUser);
 router.post('/checkFollowStatus', userRelationshipsController.checkFollowStatus); // This is the new route
-router.get('/followers/:userId', userRelationshipsController.getFollowers);
-router.get('/following/:userId', userRelationshipsController.getFollowing);
-router.get('/mutualFollowers/:userId1/:userId2', userRelationshipsController.getMutualFollowers);
+router.get('/followers/:username', userRelationshipsController.getFollowers);
+router.get('/following/:username', userRelationshipsController.getFollowing);
+router.get('/mutualFollowers/:username1/:username2', userRelationshipsController.getMutualFollowers);
 
 module.exports = router;

@@ -77,7 +77,8 @@ userSchema.pre('validate', function(next) {
 });
 
 // Indexes for efficient querying
-userSchema.index({ username: 1 });
+userSchema.index({ userId: 1 });
 userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
 
 module.exports = mongoose.model('User', userSchema);

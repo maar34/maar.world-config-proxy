@@ -6,7 +6,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const configIpRoutes = require('./routes/configIpRoutes');
 const trackRoutes = require('./routes/trackRoutes');
-const userRelationshipsRoutes = require('./routes/userRelationshipsRoutes'); // Import the new UserRelationships routes
+const userRelationshipsRoutes = require('./routes/userRelationshipsRoutes');
 const http = require('http');
 const rateLimit = require('express-rate-limit');
 //const magic = require('./auth'); // Import the Magic authentication module
@@ -25,11 +25,11 @@ const authRoutes = require('./routes/authRoutes');
 const app = express();
 
 // Middleware Setup
-app.use(bodyParser.json({ limit: '200mb' }));
-app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
+//app.use(bodyParser.json({ limit: '200mb' }));
+//app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
 
 // CORS configuration
-const allowedOrigins = ['http://127.0.0.1:4000', 'http://localhost:4000', 'http://127.0.0.1:4001', 'http://localhost:4001','http://maar.world'];
+const allowedOrigins = ['http://127.0.0.1:4005', 'http://localhost:4005', 'http://127.0.0.1:4001', 'http://localhost:4001', 'http://maar.world'];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
@@ -59,7 +59,6 @@ app.use('/api', profileRoutes); // Prefix all routes in profileRoutes.js with /a
 // Use the routes with middleware applied
 
 app.use(express.json());  // Ensure body parsing middleware is enabled
-app.use('/api/auth', authRoutes);
 
 //app.use('/api/config', configIpRoutes);
 //app.use('/api/tracks', trackRoutes);
@@ -76,53 +75,7 @@ app.use((req, res, next) => {
 });
 
 
-// Magic Link Authentication Route
-app.post('/login', async (req, res) => {
-  const didToken = req.headers.authorization.split('Bearer ').pop();
-
-  try {
-      // Validate the DID token
-      await magic.token.validate(didToken);
-
-      // Retrieve the authenticated user metadata
-      const metadata = await magic.users.getMetadataByToken(didToken);
-
-      // Find or create the user in the database
-      let user = await User.findOne({ email: metadata.email });
-      if (!user) {
-          user = new User({
-              email: metadata.email,
-              username: metadata.email.split('@')[0], // Default username
-              role: 'Listener', // Default role
-          });
-          await user.save();
-      }
-
-      // Generate a JWT with the user's role
-      const token = jwt.sign(
-        { userId: session.user.id, email: session.user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-    );
-      res.json({ token });
-  } catch (error) {
-      console.error('Login error:', error);
-      res.status(401).json({ error: 'Authentication failed' });
-  }
-});
-
-// Route to log out a user
-app.post('/logout', async (req, res) => {
-  const didToken = req.headers.authorization.split('Bearer ').pop();
-
-  try {
-    await magic.users.logoutByToken(didToken);
-    res.json({ message: 'User logged out' });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(401).json({ error: 'Logout failed' });
-  }
-});
+*/
 
 // Route to fetch exoplanet data
 app.get('/metadata/exoplanets.json', async (req, res) => {

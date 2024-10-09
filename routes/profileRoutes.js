@@ -31,9 +31,9 @@ router.get('/profile', async (req, res) => {
             return res.status(400).json({ message: 'Either User ID or Username is required' });
         }
 
-        // Find user by either userId or username
+        // Find user by either userId (Supabase UUID) or username
         const user = userId 
-            ? await User.findById(userId)
+            ? await User.findOne({ userId })  // Fetch by userId (string) instead of _id
             : await User.findOne({ username });
 
         if (!user) {
@@ -77,6 +77,45 @@ router.get('/profile', async (req, res) => {
     }
 });
 
+// Check if a username is unique
+router.get('/checkUsername', async (req, res) => {
+    try {
+        const { username } = req.query;
+
+        // Log the received request
+        console.log(`Received request to check username uniqueness for: ${username}`);
+
+        // Check if username is missing
+        if (!username) {
+            console.log('Username parameter is missing in the request.');
+            return res.status(400).json({ isUnique: false, message: 'Username is required' });
+        }
+
+        // Log query before attempting to find the user
+        console.log(`Querying the database for username: ${username}`);
+
+        // Find the user by username
+        const user = await User.findOne({ username });
+
+        // Log result of database query
+        if (user) {
+            console.log(`Username is already taken: ${username}`);
+            return res.status(200).json({ isUnique: false });
+        }
+
+        // If no user is found, the username is unique
+        console.log(`Username is available: ${username}`);
+        res.status(200).json({ isUnique: true });
+    } catch (error) {
+        // Log any unexpected error
+        console.error('Error checking username uniqueness:', error);
+        res.status(500).json({ isUnique: false, message: 'Server error' });
+    }
+});
+
+
+
+// Maintain getPublicProfile route to fetch public profile based on username
 // Maintain getPublicProfile route to fetch public profile based on username
 router.get('/getPublicProfile', async (req, res) => {
     try {
@@ -111,6 +150,7 @@ router.get('/getPublicProfile', async (req, res) => {
 });
 
 // Route to update user profile including profile image upload
+// Route to update user profile including profile image upload
 router.post('/updateUserProfile', upload.single('profileImage'), async (req, res) => {
     try {
         const { userId, username, genderIdentity, customGenderIdentity, pronouns, otherPronouns, phone, displayName, profileURL, city, country, bio, customLinks } = req.body;
@@ -139,7 +179,8 @@ router.post('/updateUserProfile', upload.single('profileImage'), async (req, res
             updateData.profileImage = `/uploads/users/${userId}/${req.file.filename}`;
         }
 
-        const user = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+        // Use findOneAndUpdate to update based on userId (string UUID from Supabase)
+        const user = await User.findOneAndUpdate({ userId }, { $set: updateData }, { new: true });
 
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
@@ -177,5 +218,7 @@ router.get('/:profileURL', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+
 
 module.exports = router;

@@ -45,7 +45,7 @@ exports.submitTrackData = async (req, res) => {
         const trackId = newTrack._id;
 
         // Update the user with the new track
-        await User.findByIdAndUpdate(ownerId, { $push: { tracksOwned: trackId } });
+        await User.findOneAndUpdate({ userId: ownerId }, { $push: { tracksOwned: trackId } });
 
         res.status(201).json({ trackId });
     } catch (error) {
@@ -204,7 +204,7 @@ exports.getUserTracks = async (req, res) => {
         const { userId } = req.params;
 
         // Find the user by ID
-        const user = await User.findById(userId).populate('tracksOwned');
+        const user = await User.findOne({ userId }).populate('tracksOwned');
 
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });

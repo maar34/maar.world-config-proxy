@@ -9,6 +9,7 @@ async function loginHandler(req, res) {
     const { email, password } = req.body;
 
     try {
+        // Authenticate user with Supabase
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -18,27 +19,28 @@ async function loginHandler(req, res) {
             return res.status(401).json({ message: 'Login failed', error: error.message });
         }
 
-        const session = data.session;
-        let user = await User.findOne({ userId: session.user.id });
+        const session = data.session; // Extract session from response
+        const userId = session.user.id; // Supabase user ID
+
+        // Check if user exists in MongoDB
+        const user = await User.findOne({ userId });
 
         if (!user) {
-            user = new User({
-                userId: session.user.id,
-                email: session.user.email,
-                username: session.user.email.split('@')[0],
-                role: 'Listener',
-            });
-            await user.save();
+            // If user is not found, return an error (user should have been registered already)
+            return res.status(404).json({ message: 'User not found in database. Please register first.' });
         }
 
-        const token = jwt.sign({ userId: session.user.id, email: session.user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        // Generate JWT token with userId and email
+        const token = jwt.sign({ userId, email: session.user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.status(200).json({ message: 'Login successful', token, user: session.user });
+        // Return success response with the token and user data
+        res.status(200).json({ message: 'Login successful', token, userId });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ message: 'Server error during login', error: error.message });
     }
 }
+
 
 // Handle user logout
 async function logoutHandler(req, res) {
