@@ -3,6 +3,7 @@ const router = express.Router();
 const soundEngineController = require('../controllers/SoundEngineController'); 
 
 // Sound Engine Routes
+router.get('/exists', soundEngineController.checkSoundEngineExists); // For checking if a soundEngineName is available
 router.post('/', soundEngineController.createSoundEngine); // For creating a new sound engine
 router.get('/owner', soundEngineController.getSoundEnginesByOwner); // For fetching engines by ownerId or username in query
 router.get('/:soundEngineId', soundEngineController.getSoundEngineById); // For fetching a single engine by its ID

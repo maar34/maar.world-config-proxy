@@ -5,6 +5,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const usernameRegex = /^[a-zA-Z0-9_-]{1,30}$/;
+
 // Helper for creating directories
 const ensureDirectoryExistence = (dir) => {
     if (!fs.existsSync(dir)) {
@@ -56,14 +58,19 @@ const revertChangesOnError = async (soundEngineId, ownerId, soundEngineFolder) =
         console.error('Error during rollback:', err);
     }
 };
+
+
+// Create Sound Engine
 // Create Sound Engine
 exports.createSoundEngine = [
     configureUpload(path.join(__dirname, '../uploads/soundEngines')),
     async (req, res) => {
+        const uploadDirBase = path.join(__dirname, '../uploads/soundEngines');
+        let soundEngineId = null; // To track in case of rollback
         try {
             const {
                 ownerId,
-                availability,
+                isPublic,
                 developerUsername,
                 soundEngineName,
                 color1,
@@ -75,19 +82,32 @@ exports.createSoundEngine = [
                 credits
             } = req.body;
 
-
-            if (!ownerId || !availability || !developerUsername || !soundEngineName) {
-                console.log('Missing required fields:', { ownerId, availability, developerUsername, soundEngineName });
+            // Validate required fields
+            if (!ownerId || isPublic === undefined || !developerUsername || !soundEngineName) {
+                console.log('Missing required fields:', { ownerId, isPublic, developerUsername, soundEngineName });
                 return res.status(400).json({ message: 'Missing required fields.' });
             }
 
+            // Validate soundEngineName format
+            if (!usernameRegex.test(soundEngineName)) {
+                return res.status(400).json({ message: 'Invalid soundEngineName format. It should only contain letters, numbers, underscores, and hyphens, and be up to 30 characters long.' });
+            }
+
+            // Check if soundEngineName already exists globally
+            const existingSoundEngine = await SoundEngine.findOne({ soundEngineName });
+            if (existingSoundEngine) {
+                return res.status(409).json({ message: 'Sound Engine name already taken. Please choose another one.' });
+            }
+
+            // Parse parameter JSON strings if they exist
             const parsedXParam = xParam ? JSON.parse(xParam) : {};
             const parsedYParam = yParam ? JSON.parse(yParam) : {};
             const parsedZParam = zParam ? JSON.parse(zParam) : {};
 
+            // Create new SoundEngine instance
             const newSoundEngine = new SoundEngine({
                 ownerId, // Use userId as a string
-                availability,
+                isPublic,
                 developerUsername,
                 soundEngineName,
                 color1,
@@ -101,33 +121,38 @@ exports.createSoundEngine = [
 
             console.log('New SoundEngine object created:', newSoundEngine);
 
+            // Save the SoundEngine to generate _id
             await newSoundEngine.save();
-            const soundEngineId = newSoundEngine._id;
+            soundEngineId = newSoundEngine._id;
 
             console.log('Sound Engine saved with ID:', soundEngineId);
 
-            const uploadDir = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
+            // Define upload directory specific to the SoundEngine
+            const uploadDir = path.join(uploadDirBase, soundEngineId.toString());
             ensureDirectoryExistence(uploadDir);
-            //console.log('Upload directory ensured at:', uploadDir);
 
+            // Handle file uploads
             if (req.files && req.files.soundEngineImage) {
-                const imagePath = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineImage[0].filename}`;
-                const oldImagePath = req.files.soundEngineImage[0].path;
-                const newImagePath = path.join(uploadDir, req.files.soundEngineImage[0].filename);
+                const imageFile = req.files.soundEngineImage[0];
+                const imagePath = `/uploads/soundEngines/${soundEngineId}/${imageFile.filename}`;
+                const oldImagePath = imageFile.path;
+                const newImagePath = path.join(uploadDir, imageFile.filename);
                 fs.renameSync(oldImagePath, newImagePath);
                 newSoundEngine.soundEngineImage = imagePath;
                 console.log('Sound engine image saved at:', imagePath);
             }
 
             if (req.files && req.files.soundEngineFile) {
-                const jsonFilePath = `/uploads/soundEngines/${soundEngineId}/${req.files.soundEngineFile[0].filename}`;
-                const oldJsonFilePath = req.files.soundEngineFile[0].path;
-                const newJsonFilePath = path.join(uploadDir, req.files.soundEngineFile[0].filename);
+                const jsonFile = req.files.soundEngineFile[0];
+                const jsonFilePath = `/uploads/soundEngines/${soundEngineId}/${jsonFile.filename}`;
+                const oldJsonFilePath = jsonFile.path;
+                const newJsonFilePath = path.join(uploadDir, jsonFile.filename);
                 fs.renameSync(oldJsonFilePath, newJsonFilePath);
                 newSoundEngine.soundEngineFile = jsonFilePath;
                 console.log('Sound engine file saved at:', jsonFilePath);
             }
 
+            // Save the SoundEngine again with updated file paths
             await newSoundEngine.save();
             console.log('Sound Engine object after file updates:', newSoundEngine);
 
@@ -138,15 +163,38 @@ exports.createSoundEngine = [
                 { new: true }
             );
 
-         //   console.log('Updated User after adding engine:', updatedUser);
+            console.log('Updated User after adding engine:', updatedUser);
 
             res.status(201).json({ success: true, message: 'Sound Engine created successfully!', soundEngine: newSoundEngine });
         } catch (error) {
             console.error('Error creating sound engine:', error);
+
+            // Rollback Mechanism: Remove SoundEngine document and associated files if they were created
+            if (soundEngineId && req.body.ownerId) {
+                const soundEngineFolder = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
+                await revertChangesOnError(soundEngineId, req.body.ownerId, soundEngineFolder);
+            }
+
+            // Handle different error types
+            if (error.name === 'ValidationError') {
+                const messages = Object.values(error.errors).map(val => val.message);
+                return res.status(400).json({ message: 'Validation Error', errors: messages });
+            }
+
+            if (error.code === 11000) { // Duplicate key error
+                return res.status(409).json({ message: 'Sound Engine name already taken. Please choose another one.' });
+            }
+
+            if (error instanceof multer.MulterError) {
+                // Handle Multer-specific errors
+                return res.status(400).json({ message: error.message });
+            }
+
             res.status(500).json({ message: 'Server error' });
         }
     }
 ];
+
 
 
 exports.updateSoundEngine = [
@@ -168,14 +216,28 @@ exports.updateSoundEngine = [
                 console.log('SoundEngine not found for update:', soundEngineId);
                 return res.status(404).json({ message: 'Sound Engine not found' });
             }
-                        // Ensure only the owner can update
+
+            // Ensure only the owner can update
             if (soundEngine.ownerId !== ownerId) {
                 return res.status(403).json({ message: 'You do not have permission to edit this sound engine' });
             }
 
+            // If soundEngineName is being updated, check for uniqueness
+            if (req.body.soundEngineName && req.body.soundEngineName !== soundEngine.soundEngineName) {
+                // Validate soundEngineName format
+                if (!usernameRegex.test(req.body.soundEngineName)) {
+                    return res.status(400).json({ message: 'Invalid soundEngineName format. It should only contain letters, numbers, underscores, and hyphens, and be up to 30 characters long.' });
+                }
+
+                const existingSoundEngine = await SoundEngine.findOne({ soundEngineName: req.body.soundEngineName });
+                if (existingSoundEngine) {
+                    return res.status(409).json({ message: 'Sound Engine name already taken. Please choose another one.' });
+                }
+            }
+
             // Prepare the updates object with fallbacks for existing values
             const updates = {
-                availability: req.body.availability || soundEngine.availability,
+                isPublic: req.body.isPublic !== undefined ? req.body.isPublic : soundEngine.isPublic,
                 developerUsername: req.body.developerUsername || soundEngine.developerUsername,
                 soundEngineName: req.body.soundEngineName || soundEngine.soundEngineName,
                 color1: req.body.color1 || soundEngine.color1,
@@ -198,16 +260,50 @@ exports.updateSoundEngine = [
 
             console.log('Updates being applied:', updates);
 
+            // If files are uploaded, move them to the correct directory
+            const uploadDir = path.join(__dirname, `../uploads/soundEngines/${soundEngineId}`);
+            ensureDirectoryExistence(uploadDir);
+
+            if (req.files && req.files.soundEngineImage) {
+                const imageFile = req.files.soundEngineImage[0];
+                const oldImagePath = imageFile.path;
+                const newImagePath = path.join(uploadDir, imageFile.filename);
+                fs.renameSync(oldImagePath, newImagePath);
+            }
+
+            if (req.files && req.files.soundEngineFile) {
+                const jsonFile = req.files.soundEngineFile[0];
+                const oldJsonFilePath = jsonFile.path;
+                const newJsonFilePath = path.join(uploadDir, jsonFile.filename);
+                fs.renameSync(oldJsonFilePath, newJsonFilePath);
+            }
+
             // Update the sound engine in the database
             const updatedSoundEngine = await SoundEngine.findByIdAndUpdate(
                 soundEngineId,
                 updates,
-                { new: true }
+                { new: true, runValidators: true }
             );
 
             res.json({ success: true, message: 'Sound Engine updated successfully!', soundEngine: updatedSoundEngine });
         } catch (error) {
             console.error('Error updating sound engine:', error);
+
+            // Handle different error types
+            if (error.name === 'ValidationError') {
+                const messages = Object.values(error.errors).map(val => val.message);
+                return res.status(400).json({ message: 'Validation Error', errors: messages });
+            }
+
+            if (error.code === 11000) { // Duplicate key error
+                return res.status(409).json({ message: 'Sound Engine name already taken. Please choose another one.' });
+            }
+
+            if (error instanceof multer.MulterError) {
+                // Handle Multer-specific errors
+                return res.status(400).json({ message: error.message });
+            }
+
             res.status(500).json({ message: 'Server error' });
         }
     }
@@ -255,13 +351,25 @@ exports.getSoundEngineById = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Sound Engine not found' });
         }
 
+        // Fetch owner details if needed
+        const owner = await User.findOne({ userId: soundEngine.ownerId }, 'username displayName profileImage');
+        const ownerDetails = owner ? {
+            username: owner.username,
+            displayName: owner.displayName,
+            profileImage: owner.profileImage
+        } : null;
+
         console.log('Found sound engine:', soundEngine);
-        res.json({ success: true, soundEngine });
+        console.log('Owner details:', ownerDetails);
+
+        // Add ownerDetails to the response if it exists
+        res.json({ success: true, soundEngine: { ...soundEngine.toObject(), ownerDetails } });
     } catch (error) {
         console.error('Error fetching sound engine by ID:', error);
         res.status(400).json({ success: false, message: 'Bad request' });
     }
 };
+
 
 
 // Fetch all sound engines owned by a user
@@ -313,6 +421,34 @@ exports.getSoundEnginesByOwner = async (req, res) => {
     } catch (error) {
         // Log the error and send a 500 response in case of an exception
         console.error('Error fetching sound engines:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+exports.checkSoundEngineExists = async (req, res) => {
+    try {
+        const { soundEngineName, id } = req.query;
+
+        if (!soundEngineName) {
+            return res.status(400).json({ success: false, message: 'soundEngineName is required' });
+        }
+
+        // Validate soundEngineName format
+        const usernameRegex = /^[a-zA-Z0-9_-]{1,30}$/;
+        if (!usernameRegex.test(soundEngineName)) {
+            return res.status(400).json({ success: false, message: 'Invalid soundEngineName format' });
+        }
+
+        // Build the query to find a sound engine by name, excluding the one with the provided ID if editing.
+        const query = { soundEngineName };
+        if (id) {
+            query._id = { $ne: id }; // Exclude the sound engine with the specified ID from the search.
+        }
+
+        const existingSoundEngine = await SoundEngine.findOne(query);
+        res.json({ success: true, exists: !!existingSoundEngine });
+    } catch (error) {
+        console.error('Error checking sound engine existence:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
