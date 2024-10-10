@@ -1,10 +1,12 @@
+// controllers/ConfigIntPlayerController.js
+
 const ConfigIntPlayer = require('../models/ConfigIntPlayer');
 const SonicEngine = require('../models/SonicEngine');
 const Exoplanet = require('../models/Exoplanet');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const User = require('../models/User'); // Add this if not already present
+const User = require('../models/User'); // Ensure this is present
 
 // Create directory if it doesn't exist
 const createUploadPath = (uploadPath) => {
@@ -50,9 +52,11 @@ exports.uploadModelFiles = (req, res) => {
   });
 };
 
-// Other methods remain unchanged
+// Create ConfigIntPlayer
 exports.createConfigIntPlayer = async (req, res) => {
   try {
+    console.log('Received request body:', req.body); // Add this line for debugging
+
     const { ownerId } = req.body;
 
     if (!ownerId) {
@@ -60,32 +64,45 @@ exports.createConfigIntPlayer = async (req, res) => {
     }
 
     // Create new ConfigIntPlayer (interplanetary player)
-    const config = new ConfigIntPlayer(req.body);
+    const config = new ConfigIntPlayer({
+      ...req.body,
+      ownerId // Ensure ownerId is a UUID string
+    });
     await config.save();
 
     // Update the user with the new interplanetary player
-    await User.findByIdAndUpdate(ownerId, { $push: { interplanetaryPlayersOwned: config._id } });
+    const updatedUser = await User.findOneAndUpdate(
+      { userId: ownerId }, // Query by userId
+      { $push: { interplanetaryPlayersOwned: config._id } },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedUser) {
+      // Optionally handle the case where the user isn't found
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
     res.status(201).json({ success: true, message: 'Interplanetary player created successfully!', config });
   } catch (err) {
     console.error('Error creating interplanetary player:', err);
-    res.status(400).send(err);
+    res.status(400).send({ error: err.message });
   }
 };
 
+// Get all ConfigIntPlayers
 exports.getConfigIntPlayers = async (req, res) => {
   try {
-    const configs = await ConfigIntPlayer.find();
+    const configs = await ConfigIntPlayer.find().populate('ownerId', 'userId'); // Optional: Populate owner details
     res.status(200).send(configs);
   } catch (err) {
-    console.error('Error creating configuration:', error);
-    res.status(400).send(err);
+    console.error('Error fetching configuration:', err);
+    res.status(400).send({ error: err.message });
   }
 };
 
+// Fetch Exoplanet Data
 exports.fetchExoplanetData = async (req, res) => {
   try {
-   // console.log('Fetching exoplanet data');
     const exoplanets = await Exoplanet.find().lean();
     console.log('Fetched exoplanets:', exoplanets);
     res.status(200).send(exoplanets);
@@ -95,9 +112,9 @@ exports.fetchExoplanetData = async (req, res) => {
   }
 };
 
+// Fetch Sonic Engine Data
 exports.fetchSonicEngineData = async (req, res) => {
   try {
-   // console.log('Fetching sonic engines');
     const sonicEngines = await SonicEngine.find().lean();
     console.log('Fetched sonic engines:', sonicEngines);
     res.status(200).send(sonicEngines);
@@ -107,7 +124,7 @@ exports.fetchSonicEngineData = async (req, res) => {
   }
 };
 
-
+// Delete ConfigIntPlayer
 exports.deleteConfigIntPlayer = async (req, res) => {
   try {
     const { playerId } = req.params;
@@ -120,9 +137,16 @@ exports.deleteConfigIntPlayer = async (req, res) => {
     }
 
     // Remove the player from the user's interplanetaryPlayersOwned array
-    await User.findByIdAndUpdate(player.ownerId, {
-      $pull: { interplanetaryPlayersOwned: playerId }
-    });
+    const updatedUser = await User.findOneAndUpdate(
+      { userId: player.ownerId }, // Query by userId
+      { $pull: { interplanetaryPlayersOwned: playerId } },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedUser) {
+      // Optionally handle the case where the user isn't found
+      console.warn(`User with userId ${player.ownerId} not found while deleting player.`);
+    }
 
     // Optionally, clean up any associated files (e.g., models, textures)
     const playerFolder = path.join(__dirname, `../uploads/models/${playerId}`);
@@ -133,6 +157,6 @@ exports.deleteConfigIntPlayer = async (req, res) => {
     res.json({ success: true, message: 'Interplanetary player deleted successfully' });
   } catch (error) {
     console.error('Error deleting interplanetary player:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };

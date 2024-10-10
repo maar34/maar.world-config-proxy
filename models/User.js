@@ -33,9 +33,11 @@ const userInfoSchema = new mongoose.Schema({
 });
 
 const userSchema = new mongoose.Schema({
-  userId: { 
-    type: String, 
-    unique: true 
+  userId: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true,
   },
   username: { type: String, required: true, unique: true },
   displayName: { type: String },
@@ -46,7 +48,7 @@ const userSchema = new mongoose.Schema({
   customLinks: [{ type: String }],
   userInfo: userInfoSchema,
   email: { type: String, required: true, unique: true },
-  interplanetaryPlayersOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'InterplanetaryPlayer' }], 
+  interplanetaryPlayersOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ConfigIp' }], 
   enginesOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sound Engines' }], 
   playlistsOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Playlist' }], 
   tracksOwned: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Track' }], 

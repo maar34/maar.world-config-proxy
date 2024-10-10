@@ -1,3 +1,5 @@
+// models/ConfigIp.js
+
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -13,7 +15,7 @@ const SonificationSchema = new Schema({
   regen7: { type: String, required: true }
 });
 
-// Define the Artist Schema (renamed to dddArtist)
+// Define the Artist Schema (renamed to DDDArtistSchema)
 const DDDArtistSchema = new Schema({
   name: { type: String, required: true },  // Artist name
   genderIdentity: { 
@@ -62,7 +64,7 @@ const IPSocialSchema = new Schema({
 
 // Define the main Config Schema
 const ConfigSchema = new Schema({
-  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},  // The user who owns the interplanetary player
+  ownerId: { type: String, ref: 'User', required: true, index: true },  // Updated to String for userId
   privacy: { type: String, default: 'private' },
   ipId: { type: Number, required: true },  // IP ID
   artName: { type: String, required: true },  // Name of the artwork

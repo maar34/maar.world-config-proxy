@@ -3,7 +3,7 @@ const router = express.Router();
 const configIntPlayerController = require('../controllers/ConfigIntPlayerController');
 const exoplanetController = require('../controllers/ExoplanetController'); // Ensure this path is correct
 const { verifyJWT, requireRole } = require('../utils/requireRole');
-//const { handleUserLogin } = require('../auth'); // Adjust the path as necessary
+// const { handleUserLogin } = require('../auth'); // Adjust the path as necessary
 
 console.log('Registering routes...');
 
@@ -14,12 +14,12 @@ router.get('/test', (req, res) => {
 });
 
 // Routes for creating and fetching configuration players 
-// In the front end, this functions are used by the protoplanet form 
-router.post('/uploadModelFiles', configIntPlayerController.uploadModelFiles); //
+// In the front end, these functions are used by the protoplanet form 
+router.post('/uploadModelFiles', configIntPlayerController.uploadModelFiles);
 
 router.get('/configIntPlayers', configIntPlayerController.getConfigIntPlayers);
 
-router.post('/configIntPlayer', configIntPlayerController.createConfigIntPlayer); // set Int Player form in the database and write the Artistic name set by the user, then this planet is owned 
+router.post('/configIntPlayer', configIntPlayerController.createConfigIntPlayer); // No multer middleware here
 router.post('/updateExoplanet', exoplanetController.updateExoplanet); // Ensure this route is correct
 
 // router.post('/login', handleUserLogin);
@@ -35,6 +35,5 @@ router.get('/admin/configurations', verifyJWT, requireRole('Admin'), (req, res) 
 });
 
 console.log('Routes registered');
-
 
 module.exports = router;
