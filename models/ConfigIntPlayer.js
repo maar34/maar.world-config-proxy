@@ -65,7 +65,12 @@ const IPSocialSchema = new Schema({
 // Define the main Config Schema
 const ConfigSchema = new Schema({
   ownerId: { type: String, ref: 'User', required: true, index: true },  // Updated to String for userId
-  privacy: { type: String, default: 'private' },
+  isPublic: {
+    type: Boolean,
+    required: true,
+    default: false, // Set default to true
+    index: true     // Add index for faster queries
+  },  
   ipId: { type: Number, required: true },  // IP ID
   artName: { type: String, required: true },  // Name of the artwork
   sciName: { type: String, required: true },  // Scientific name of the exoplanet

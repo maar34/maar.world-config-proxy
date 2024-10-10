@@ -103,6 +103,7 @@ exports.getConfigIntPlayers = async (req, res) => {
 // Fetch Exoplanet Data
 exports.fetchExoplanetData = async (req, res) => {
   try {
+    console.log('Fetching exoplanet data...');
     const exoplanets = await Exoplanet.find().lean();
     console.log('Fetched exoplanets:', exoplanets);
     res.status(200).send(exoplanets);
@@ -115,6 +116,7 @@ exports.fetchExoplanetData = async (req, res) => {
 // Fetch Sonic Engine Data
 exports.fetchSonicEngineData = async (req, res) => {
   try {
+    console.log('Fetching sonic engine data...');
     const sonicEngines = await SonicEngine.find().lean();
     console.log('Fetched sonic engines:', sonicEngines);
     res.status(200).send(sonicEngines);
@@ -158,5 +160,37 @@ exports.deleteConfigIntPlayer = async (req, res) => {
   } catch (error) {
     console.error('Error deleting interplanetary player:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// controllers/ConfigIntPlayerController.js
+
+exports.getInterplanetaryPlayerById = async (req, res) => {
+  const playerId = req.params.playerId;
+  console.log(`Fetching details for Interplanetary Player ID: ${playerId}`);
+  
+  try {
+      const player = await ConfigIntPlayer.findById(playerId);
+      if (!player) {
+          console.log(`Player not found with ID: ${playerId}`);
+          return res.status(404).json({ success: false, message: 'Player not found' });
+      }
+
+      // Fetch owner details if needed
+      const owner = await User.findOne({ userId: player.ownerId }, 'username displayName profileImage');
+      const ownerDetails = owner ? {
+          username: owner.username,
+          displayName: owner.displayName,
+          profileImage: owner.profileImage
+      } : null;
+
+      console.log('Found interplanetary player:', player);
+      console.log('Owner details:', ownerDetails);
+
+      // Add ownerDetails to the response if it exists
+      res.json({ success: true, player: { ...player.toObject(), ownerDetails } });
+  } catch (error) {
+      console.error(`Error fetching interplanetary player by ID: ${error.message}`);
+      res.status(500).json({ success: false, message: 'Server error' });
   }
 };

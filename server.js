@@ -59,7 +59,8 @@ app.use(limiter);
 app.use('/uploads', express.static('uploads'));
 
 // Register Routes AFTER Body Parsing Middleware
-app.use('/api', configIpRoutes); 
+app.use('/api/interplanetaryplayers', configIpRoutes);
+
 app.use('/api', trackRoutes); 
 app.use('/api', profileRoutes); 
 app.use('/api/auth', authRoutes);
