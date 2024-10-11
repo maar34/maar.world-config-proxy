@@ -3,28 +3,9 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-
-// Define the Artist Schema (renamed to DDDArtistSchema)
-const DDDArtistSchema = new Schema({
-  name: { type: String, required: true },  // Artist name
-  genderIdentity: { 
-    type: String, 
-    enum: [
-      'Prefer not to reply', 
-      'Woman', 
-      'Man', 
-      'Trans woman', 
-      'Trans man', 
-      'Non-Binary', 
-      'Not Listed'
-    ], 
-    default: 'Prefer not to reply' 
-  }
-});
-
 // Define the 3D Schema
 const DDDSchema = new Schema({
-  dddArtist: [DDDArtistSchema],  // Array of dddArtist objects
+  dddArtist: { type: String, required: true },  // Artist name as a string
   textureURL: { type: String, required: true },  // URL to the texture file
   objURL: { type: String, required: true }  // URL to the OBJ file
 });
@@ -70,7 +51,7 @@ const ConfigSchema = new Schema({
   discoveryyear: { type: mongoose.Types.Decimal128, required: true },  // Discovery year
   description: { type: String, required: true },  // Description of the exoplanet or artwork
   credits: { type: String, required: true },  // Credits for the artwork or discovery
-  ddd: { type: DDDSchema, required: true },  // 3D data with dddArtists
+  ddd: { type: DDDSchema, required: true },  // 3D data with dddArtist as a string
   ipPlayback: { type: IPPlaybackSchema, required: false },  // Playback data (optional)
   ipSocial: { type: IPSocialSchema, required: false }  // Social interaction data (optional)
 }, {
