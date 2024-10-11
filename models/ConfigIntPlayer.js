@@ -3,17 +3,6 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-// Define the Sonification Schema
-const SonificationSchema = new Schema({
-  regenState: { type: Boolean, required: true },
-  regen1: { type: String, required: true },
-  regen2: { type: String, required: true },
-  regen3: { type: String, required: true },
-  regen4: { type: String, required: true },
-  regen5: { type: String, required: true },
-  regen6: { type: String, required: true },
-  regen7: { type: String, required: true }
-});
 
 // Define the Artist Schema (renamed to DDDArtistSchema)
 const DDDArtistSchema = new Schema({
@@ -81,8 +70,6 @@ const ConfigSchema = new Schema({
   discoveryyear: { type: mongoose.Types.Decimal128, required: true },  // Discovery year
   description: { type: String, required: true },  // Description of the exoplanet or artwork
   credits: { type: String, required: true },  // Credits for the artwork or discovery
-  soundEngine: { type: String, required: true },  // Sound engine used for the project
-  sonification: { type: SonificationSchema, required: true },  // Sonification data
   ddd: { type: DDDSchema, required: true },  // 3D data with dddArtists
   ipPlayback: { type: IPPlaybackSchema, required: false },  // Playback data (optional)
   ipSocial: { type: IPSocialSchema, required: false }  // Social interaction data (optional)

@@ -1,12 +1,13 @@
 // controllers/ConfigIntPlayerController.js
 
 const ConfigIntPlayer = require('../models/ConfigIntPlayer');
-const SonicEngine = require('../models/SonicEngine');
+//const SonicEngine = require('../models/SonicEngine');
 const Exoplanet = require('../models/Exoplanet');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
 const User = require('../models/User'); // Ensure this is present
+const mongoose = require('mongoose');
 
 // Create directory if it doesn't exist
 const createUploadPath = (uploadPath) => {
@@ -43,14 +44,30 @@ exports.uploadModelFiles = (req, res) => {
       return res.status(500).json({ error: err.message });
     }
     console.log('Files received:', req.files);
-    const files = req.files;
-    const response = {
-      uploadObjURL: `/uploads/models/${req.body.ipId || 'default'}/${files.uploadObj[0].originalname}`,
-      uploadTextureURL: `/uploads/models/${req.body.ipId || 'default'}/${files.uploadTexture[0].originalname}`
-    };
+
+    // Prepare response object for uploaded file URLs
+    const files = req.files || {};
+    const response = {};
+
+    // Handle the OBJ file if provided
+    if (files.uploadObj && files.uploadObj.length > 0) {
+      response.uploadObjURL = `/uploads/models/${req.body.ipId || 'default'}/${files.uploadObj[0].originalname}`;
+    }
+
+    // Handle the texture file if provided
+    if (files.uploadTexture && files.uploadTexture.length > 0) {
+      response.uploadTextureURL = `/uploads/models/${req.body.ipId || 'default'}/${files.uploadTexture[0].originalname}`;
+    }
+
+    // Check if at least one file was uploaded
+    if (Object.keys(response).length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
     res.json(response);
   });
 };
+
 
 // Create ConfigIntPlayer
 exports.createConfigIntPlayer = async (req, res) => {
@@ -89,6 +106,61 @@ exports.createConfigIntPlayer = async (req, res) => {
   }
 };
 
+// Update ConfigIntPlayer
+// Update ConfigIntPlayer
+exports.updateInterplanetaryPlayer = async (req, res) => {
+  const { playerId } = req.params;
+  console.log(`Updating Interplanetary Player ID: ${playerId}`);
+
+  // Validate the playerId before proceeding
+  if (!isValidObjectId(playerId)) {
+      console.error(`Invalid Interplanetary Player ID: ${playerId}`);
+      return res.status(400).json({ success: false, message: 'Invalid Interplanetary Player ID' });
+  }
+
+  try {
+      // Find the player by ID
+      const player = await ConfigIntPlayer.findById(playerId);
+      if (!player) {
+          console.log(`Player not found with ID: ${playerId}`);
+          return res.status(404).json({ success: false, message: 'Player not found' });
+      }
+
+      // Check if the current user is the owner of the player
+      const { ownerId } = req.body;
+      if (player.ownerId !== ownerId) {
+          return res.status(403).json({ success: false, message: 'You are not authorized to update this player' });
+      }
+
+      // Update player fields with data from the request body
+      Object.assign(player, req.body);
+
+      // Handle file uploads if new files are provided
+      const files = req.files || {};
+      if (files.uploadObj && files.uploadObj.length > 0) {
+          // Update the OBJ file path only if a new file is provided
+          const objPath = `/uploads/models/${playerId}/${files.uploadObj[0].originalname}`;
+          player.ddd.objURL = objPath;
+      }
+
+      if (files.uploadTexture && files.uploadTexture.length > 0) {
+          // Update the texture file path only if a new file is provided
+          const texturePath = `/uploads/models/${playerId}/${files.uploadTexture[0].originalname}`;
+          player.ddd.textureURL = texturePath;
+      }
+
+      // Save the updated player
+      await player.save();
+
+      res.status(200).json({ success: true, message: 'Interplanetary player updated successfully!', player });
+  } catch (error) {
+      console.error(`Error updating interplanetary player: ${error.message}`);
+      res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+
+
 // Get all ConfigIntPlayers
 exports.getConfigIntPlayers = async (req, res) => {
   try {
@@ -103,9 +175,9 @@ exports.getConfigIntPlayers = async (req, res) => {
 // Fetch Exoplanet Data
 exports.fetchExoplanetData = async (req, res) => {
   try {
-    console.log('Fetching exoplanet data...');
+    //console.log('Fetching exoplanet data...');
     const exoplanets = await Exoplanet.find().lean();
-    console.log('Fetched exoplanets:', exoplanets);
+   // console.log('Fetched exoplanets:', exoplanets);
     res.status(200).send(exoplanets);
   } catch (error) {
     console.error('Error fetching exoplanets:', error);
@@ -113,10 +185,10 @@ exports.fetchExoplanetData = async (req, res) => {
   }
 };
 
-// Fetch Sonic Engine Data
+/* Fetch Sonic Engine Data
 exports.fetchSonicEngineData = async (req, res) => {
   try {
-    console.log('Fetching sonic engine data...');
+   // console.log('Fetching sonic engine data...');
     const sonicEngines = await SonicEngine.find().lean();
     console.log('Fetched sonic engines:', sonicEngines);
     res.status(200).send(sonicEngines);
@@ -124,7 +196,8 @@ exports.fetchSonicEngineData = async (req, res) => {
     console.error('Error fetching sonic engines:', error);
     res.status(500).send({ error: 'Error fetching sonic engines' });
   }
-};
+};*/
+
 
 // Delete ConfigIntPlayer
 exports.deleteConfigIntPlayer = async (req, res) => {
@@ -165,11 +238,24 @@ exports.deleteConfigIntPlayer = async (req, res) => {
 
 // controllers/ConfigIntPlayerController.js
 
+
+// Helper function to validate ObjectId
+function isValidObjectId(id) {
+    return mongoose.Types.ObjectId.isValid(id);
+}
+
 exports.getInterplanetaryPlayerById = async (req, res) => {
   const playerId = req.params.playerId;
   console.log(`Fetching details for Interplanetary Player ID: ${playerId}`);
-  
+
+  // Validate the playerId before proceeding
+  if (!isValidObjectId(playerId)) {
+      console.error(`Invalid Interplanetary Player ID: ${playerId}`);
+      return res.status(400).json({ success: false, message: 'Invalid Interplanetary Player ID' });
+  }
+
   try {
+      // Fetch the player details
       const player = await ConfigIntPlayer.findById(playerId);
       if (!player) {
           console.log(`Player not found with ID: ${playerId}`);
@@ -187,8 +273,17 @@ exports.getInterplanetaryPlayerById = async (req, res) => {
       console.log('Found interplanetary player:', player);
       console.log('Owner details:', ownerDetails);
 
-      // Add ownerDetails to the response if it exists
-      res.json({ success: true, player: { ...player.toObject(), ownerDetails } });
+      // Prepare the player data with owner details and other needed fields
+      const responseData = {
+          ...player.toObject(),
+          ownerDetails,
+          customGenderIdentity: player.ddd.dddArtist[0]?.customGenderIdentity || null, // Include custom gender if applicable
+          textureURL: player.ddd.textureURL || null, // Ensure texture URL is included
+          objURL: player.ddd.objURL || null, // Ensure OBJ URL is included
+          ipId: player.ipId // Include ipId for the frontend form
+      };
+
+      res.json({ success: true, player: responseData });
   } catch (error) {
       console.error(`Error fetching interplanetary player by ID: ${error.message}`);
       res.status(500).json({ success: false, message: 'Server error' });

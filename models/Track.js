@@ -11,6 +11,8 @@ const TrackSchema = new mongoose.Schema({
             genderIdentity: { type: String, enum: ['Prefer not to reply', 'Woman', 'Man', 'Trans woman', 'Trans man', 'Non-Binary', 'Not Listed'], default: 'Prefer not to reply' }
         }
     ],
+    soundEngine: { type: String, required: false },  // Sound engine used for the project
+    sonificationEnabled: { type: Boolean, required: false },  // Sonification data
     trackName: { type: String, required: true },
     type: { type: String, required: true },
     genre: { type: String },

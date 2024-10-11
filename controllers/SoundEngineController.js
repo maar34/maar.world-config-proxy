@@ -425,6 +425,65 @@ exports.getSoundEnginesByOwner = async (req, res) => {
     }
 };
 
+// Fetch all sound engines created by a user and those that are public
+exports.getAvailableSoundEngines = async (req, res) => {
+    try {
+        console.log('Fetching available sound engines for ownerId:', req.params.ownerId);
+
+        // Extract the ownerId from the request parameters
+        const { ownerId } = req.params;
+        console.log('Received request with ownerId:', ownerId);
+
+        // Check if ownerId is provided, and return a 400 error if not
+        if (!ownerId) {
+            console.log('Owner ID must be provided.');
+            return res.status(400).json({ success: false, message: 'Owner ID is required' });
+        }
+
+        // Fetch all sound engines owned by the user or that are public
+        const soundEngines = await SoundEngine.find({
+            $or: [
+                { ownerId }, // Sound engines owned by the given user
+                { isPublic: true } // Public sound engines by any user
+            ]
+        }).sort({ createdAt: -1 });
+
+        console.log('Found sound engines:', soundEngines);
+
+        // Prepare the response
+        const soundEnginesWithDetails = soundEngines.map(engine => ({
+            soundEngineId: engine._id, // Use `_id` as the unique identifier (soundEngineId)
+            ownerId: engine.ownerId,
+            soundEngineName: engine.soundEngineName,
+            isPublic: engine.isPublic,
+            developerUsername: engine.developerUsername,
+            soundEngineImage: engine.soundEngineImage,
+            xParamLabel: engine.xParam.label,
+            yParamLabel: engine.yParam.label,
+            zParamLabel: engine.zParam.label,
+            xParamMin: engine.xParam.min,
+            xParamMax: engine.xParam.max,
+            xParamInit: engine.xParam.initValue,
+            yParamMin: engine.yParam.min,
+            yParamMax: engine.yParam.max,
+            yParamInit: engine.yParam.initValue,
+            zParamMin: engine.zParam.min,
+            zParamMax: engine.zParam.max,
+            zParamInit: engine.zParam.initValue,
+            sonificationState: engine.sonificationState,
+            credits: engine.credits
+        }));
+
+        // Send the response with the available sound engines
+        console.log('Returning available sound engines:', soundEnginesWithDetails);
+        res.json({ success: true, soundEngines: soundEnginesWithDetails });
+    } catch (error) {
+        console.error('Error fetching available sound engines:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Check if sound engine name is available 
 exports.checkSoundEngineExists = async (req, res) => {
     try {
         const { soundEngineName, id } = req.query;

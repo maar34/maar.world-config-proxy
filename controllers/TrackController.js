@@ -21,9 +21,12 @@ exports.submitTrackData = async (req, res) => {
 
         // Create a new track instance
         const newTrack = new Track({
+            
             ownerId,
             exoplanet,
             artistNames: artists,
+            soundEngine,  // Sound engine used for the project
+            sonificationEnabled,  // sonificationEnabled data
             trackName,
             type,
             genre,
@@ -187,6 +190,8 @@ exports.getTrackDetails = async (req, res) => {
             exoplanet: track.exoplanet,
             artistNames: track.artistNames,  // Array of artists
             trackName: track.trackName,
+            soundEngine: track.soundEngine,  // Sound engine used for the project
+            sonificationEnabled: track.sonificationEnabled,  // sonificationEnabled data
             privacy: track.privacy,
             releaseDate: track.releaseDate,
         };
@@ -217,6 +222,7 @@ exports.getUserTracks = async (req, res) => {
             privacy: track.privacy,
             releaseDate: track.releaseDate,
             soundEngine: track.soundEngine,
+            sonificationEnabled: track.sonificationEnabled,  // sonificationEnabled data
             exoplanet: track.exoplanet,
 
         }));
