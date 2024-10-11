@@ -193,6 +193,56 @@ router.post('/updateUserProfile', upload.single('profileImage'), async (req, res
     }
 });
 
+
+// Search for users by displayName or username
+router.get('/searchUsers', async (req, res) => {
+    try {
+        const { query } = req.query;
+
+        // Log the received query
+        console.log(`Received /searchUsers request with query: "${query}"`);
+
+        // Check if query is missing
+        if (!query) {
+            console.log('Query parameter is missing.');
+            return res.status(400).json({ message: 'Query parameter is required' });
+        }
+
+        // Construct a case-insensitive regex for the search
+        const regex = new RegExp(query, 'i');
+        
+        console.log('Searching database with regex:', regex);
+
+        // Search for users by username or displayName using the regex
+        const users = await User.find({
+            $or: [
+                { username: { $regex: regex } },
+                { displayName: { $regex: regex } }
+            ]
+        })
+        .select('username displayName profileImage')
+        .limit(10);
+
+        // Log the results of the search
+        console.log(`Found ${users.length} user(s) matching the query.`);
+
+        // Handle no results found
+        if (users.length === 0) {
+            console.log('No users found for the query:', query);
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Return the list of found users
+        res.status(200).json(users);
+    } catch (error) {
+        // Log any error encountered during the search
+        console.error('Error in /searchUsers:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
 // Route to handle public profile view based on profileURL
 router.get('/:profileURL', async (req, res) => {
     try {

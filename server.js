@@ -9,7 +9,7 @@ const rateLimit = require('express-rate-limit');
 // Import Routes
 const configIpRoutes = require('./routes/configIpRoutes');
 const trackRoutes = require('./routes/trackRoutes');
-const profileRoutes = require('./routes/profileRoutes');
+const profileRoutes = require('./routes/profileRoutes'); // Ensure this is correctly imported
 const authRoutes = require('./routes/authRoutes'); 
 const userRelationshipsRoutes = require('./routes/userRelationshipsRoutes');
 const playlistRoutes = require('./routes/playlistRoutes'); 
@@ -45,7 +45,15 @@ app.use(cors({
   },
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+  credentials: true
+
 }));
+
+// Add this before route registrations
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
 // Rate Limiting Middleware
 const limiter = rateLimit({
