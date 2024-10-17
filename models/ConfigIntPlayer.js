@@ -49,6 +49,13 @@ const ConfigSchema = new Schema({
   period: { type: mongoose.Types.Decimal128, required: true },  // Orbital period
   radius: { type: mongoose.Types.Decimal128, required: true },  // Radius
   discoveryyear: { type: mongoose.Types.Decimal128, required: true },  // Discovery year
+  moonAmount: {
+    type: Number,
+    required: false,
+    default: 0,
+    min: 0,
+    max: 145
+},
   description: { type: String, required: true },  // Description of the exoplanet or artwork
   credits: { type: String, required: true },  // Credits for the artwork or discovery
   ddd: { type: DDDSchema, required: true },  // 3D data with dddArtist as a string
