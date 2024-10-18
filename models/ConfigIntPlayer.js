@@ -1,4 +1,4 @@
-// models/ConfigIp.js
+// models/ConfigIntPlayer.js
 
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
