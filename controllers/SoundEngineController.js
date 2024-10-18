@@ -511,3 +511,99 @@ exports.checkSoundEngineExists = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+
+/**
+ * Batch fetch Sound Engines by their IDs.
+ * Expects a query parameter 'ids' as a comma-separated list of IDs.
+ */
+exports.getSoundEnginesBatch = async (req, res) => {
+    try {
+        const idsParam = req.query.ids;
+        if (!idsParam) {
+            console.warn('No IDs provided for Sound Engines batch fetch.');
+            return res.status(400).json({ success: false, message: 'No IDs provided.' });
+        }
+
+        // Split the IDs and filter out any invalid ones (ensure they are valid 24-character hex strings)
+        const ids = idsParam.split(',').filter(id => /^[a-fA-F0-9]{24}$/.test(id));
+
+        if (ids.length === 0) {
+            console.warn('No valid IDs provided for Sound Engines batch fetch.');
+            return res.status(400).json({ success: false, message: 'No valid IDs provided.' });
+        }
+
+        console.log(`Fetching Sound Engines with IDs: ${ids.join(', ')}`);
+
+        // **Correct Instantiation Using 'new'**
+        const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
+
+        // Use aggregation with $lookup to join SoundEngine.ownerId (String) with User.userId (String)
+        const soundEngines = await SoundEngine.aggregate([
+            { $match: { _id: { $in: objectIds } } },
+            {
+                $lookup: {
+                    from: 'users', // Ensure this matches the actual collection name for User
+                    localField: 'ownerId',
+                    foreignField: 'userId',
+                    as: 'ownerDetails'
+                }
+            },
+            { $unwind: { path: '$ownerDetails', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 1,
+                    ownerId: 1,
+                    soundEngineName: 1,
+                    soundEngineImage: 1,
+                    isPublic: 1,
+                    xParam: 1,
+                    yParam: 1,
+                    zParam: 1,
+                    sonificationState: 1,
+                    sonificationAddresses: 1,
+                    credits: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    // Include desired owner fields
+                    'ownerDetails.username': 1,
+                    'ownerDetails.displayName': 1,
+                    'ownerDetails.profileImage': 1
+                }
+            }
+        ]);
+
+        if (!soundEngines.length) {
+            console.warn('No Sound Engines found for the provided IDs.');
+            return res.status(404).json({ success: false, message: 'No Sound Engines found.' });
+        }
+
+        // Format the response to include ownerDetails in a more readable format
+        const formattedSoundEngines = soundEngines.map(engine => ({
+            _id: engine._id,
+            ownerId: engine.ownerId,
+            soundEngineName: engine.soundEngineName,
+            soundEngineImage: engine.soundEngineImage,
+            isPublic: engine.isPublic,
+            xParam: engine.xParam,
+            yParam: engine.yParam,
+            zParam: engine.zParam,
+            sonificationState: engine.sonificationState,
+            sonificationAddresses: engine.sonificationAddresses,
+            credits: engine.credits,
+            createdAt: engine.createdAt,
+            updatedAt: engine.updatedAt,
+            ownerDetails: engine.ownerDetails ? {
+                username: engine.ownerDetails.username,
+                displayName: engine.ownerDetails.displayName,
+                profileImage: engine.ownerDetails.profileImage
+            } : null
+        }));
+
+        console.log(`Successfully fetched and formatted ${formattedSoundEngines.length} Sound Engines.`);
+
+        res.json({ success: true, soundEngines: formattedSoundEngines });
+    } catch (error) {
+        console.error('Error fetching sound engines batch:', error);
+        res.status(500).json({ success: false, message: 'Server error.' });
+    }
+};

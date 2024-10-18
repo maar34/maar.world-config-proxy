@@ -1,6 +1,7 @@
 /.vscode/
 
 node_modules
-# Environment variables
+# Environment Variables
 .env
+.env.*
 uploads

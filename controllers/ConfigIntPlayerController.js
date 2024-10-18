@@ -233,3 +233,109 @@ exports.getInterplanetaryPlayerById = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// controllers/InterplanetaryPlayerController.js
+
+/**
+ * Batch fetch Interplanetary Players by their IDs.
+ * Expects a query parameter 'ids' as a comma-separated list of IDs.
+ */
+exports.getInterplanetaryPlayersBatch = async (req, res) => {
+  try {
+      const idsParam = req.query.ids;
+      if (!idsParam) {
+          console.warn('No IDs provided for Interplanetary Players batch fetch.');
+          return res.status(400).json({ success: false, message: 'No IDs provided.' });
+      }
+
+      // Split the IDs and filter out any invalid ones (ensure they are valid 24-character hex strings)
+      const ids = idsParam.split(',').filter(id => /^[a-fA-F0-9]{24}$/.test(id));
+
+      if (ids.length === 0) {
+          console.warn('No valid IDs provided for Interplanetary Players batch fetch.');
+          return res.status(400).json({ success: false, message: 'No valid IDs provided.' });
+      }
+
+      console.log(`Fetching Interplanetary Players with IDs: ${ids.join(', ')}`);
+
+      // **Correct Instantiation Using 'new'**
+      const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
+
+      // Use aggregation with $lookup to join ConfigIp.ownerId (String) with User.userId (String)
+      const players = await ConfigIntPlayer.aggregate([
+          { $match: { _id: { $in: objectIds } } },
+          {
+              $lookup: {
+                  from: 'users', // Ensure this matches the actual collection name for User
+                  localField: 'ownerId',
+                  foreignField: 'userId',
+                  as: 'ownerDetails'
+              }
+          },
+          { $unwind: { path: '$ownerDetails', preserveNullAndEmptyArrays: true } },
+          {
+              $project: {
+                  _id: 1,
+                  ownerId: 1,
+                  artName: 1,
+                  sciName: 1,
+                  ra_decimal: 1,
+                  dec_decimal: 1,
+                  period: 1,
+                  radius: 1,
+                  discoveryyear: 1,
+                  moonAmount: 1,
+                  description: 1,
+                  credits: 1,
+                  ddd: 1,
+                  ipPlayback: 1,
+                  ipSocial: 1,
+                  createdAt: 1,
+                  updatedAt: 1,
+                  // Include desired owner fields
+                  'ownerDetails.username': 1,
+                  'ownerDetails.displayName': 1,
+                  'ownerDetails.profileImage': 1
+              }
+          }
+      ]);
+
+      if (!players.length) {
+          console.warn('No Interplanetary Players found for the provided IDs.');
+          return res.status(404).json({ success: false, message: 'No Interplanetary Players found.' });
+      }
+
+      // Format the response to include ownerDetails in a more readable format
+      const formattedPlayers = players.map(player => ({
+          _id: player._id,
+          ownerId: player.ownerId,
+          artName: player.artName,
+          sciName: player.sciName,
+          ra_decimal: player.ra_decimal,
+          dec_decimal: player.dec_decimal,
+          period: player.period,
+          radius: player.radius,
+          discoveryyear: player.discoveryyear,
+          moonAmount: player.moonAmount,
+          description: player.description,
+          credits: player.credits,
+          ddd: player.ddd,
+          ipPlayback: player.ipPlayback,
+          ipSocial: player.ipSocial,
+          createdAt: player.createdAt,
+          updatedAt: player.updatedAt,
+          ownerDetails: player.ownerDetails ? {
+              username: player.ownerDetails.username,
+              displayName: player.ownerDetails.displayName,
+              profileImage: player.ownerDetails.profileImage
+          } : null
+      }));
+
+      console.log(`Successfully fetched and formatted ${formattedPlayers.length} Interplanetary Players.`);
+
+      res.json({ success: true, interplanetaryPlayers: formattedPlayers });
+  } catch (error) {
+      console.error('Error fetching interplanetary players batch:', error);
+      res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};

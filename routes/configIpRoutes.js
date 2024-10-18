@@ -27,6 +27,7 @@ router.get('/fetchExoplanetData', configIntPlayerController.fetchExoplanetData);
 router.get('/admin/configurations', (req, res) => {
   res.json({ message: 'Admin configurations' });
 });
+router.get('/batch', configIntPlayerController.getInterplanetaryPlayersBatch);
 
 // Routes for creating and fetching configuration players 
 router.post('/uploadModelFiles', configIntPlayerController.uploadModelFiles);

@@ -9,7 +9,7 @@ const rateLimit = require('express-rate-limit');
 // Import Routes
 const configIpRoutes = require('./routes/configIpRoutes');
 const trackRoutes = require('./routes/trackRoutes');
-const profileRoutes = require('./routes/profileRoutes'); // Ensure this is correctly imported
+const profileRoutes = require('./routes/profileRoutes');
 const authRoutes = require('./routes/authRoutes'); 
 const userRelationshipsRoutes = require('./routes/userRelationshipsRoutes');
 const playlistRoutes = require('./routes/playlistRoutes'); 
@@ -21,11 +21,7 @@ const User = require('./models/User');
 // Initialize Express App
 const app = express();
 
-// Apply Body Parsing Middleware BEFORE Routes
-app.use(express.json({ limit: '200mb' })); // Increase limit if necessary
-app.use(express.urlencoded({ extended: true, limit: '200mb' }));
-
-// CORS Configuration
+// **CORS Configuration**
 const allowedOrigins = [
   'http://127.0.0.1:4005', 
   'http://localhost:4005', 
@@ -34,22 +30,26 @@ const allowedOrigins = [
   'http://maar.world'
 ];
 
+// Apply CORS **before routes** to ensure it applies to all API calls
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // Allow requests with no origin, like mobile apps or CURL
     if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      const msg = 'The CORS policy for this site does not allow access from the specified origin.';
       return callback(new Error(msg), false);
     }
     return callback(null, true);
   },
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
-  credentials: true
-
+  credentials: true // Include credentials if necessary
 }));
 
-// Add this before route registrations
+// **Body Parsing Middleware** (also before routes)
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ extended: true, limit: '200mb' }));
+
+// **Logging Middleware** (keep this after middleware but before routes)
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
@@ -58,7 +58,7 @@ app.use((req, res, next) => {
 // Rate Limiting Middleware
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 100 requests per windowMs
+  max: 200, // Limit each IP to 200 requests per window
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
@@ -66,21 +66,14 @@ app.use(limiter);
 // Serve Static Files (for uploaded models and textures)
 app.use('/uploads', express.static('uploads'));
 
-// Register Routes AFTER Body Parsing Middleware
+// **Routes Definitions (after middleware)**
+app.use('/api/soundEngines', soundEnginesRoutes);
 app.use('/api/interplanetaryplayers', configIpRoutes);
-
 app.use('/api', trackRoutes); 
 app.use('/api', profileRoutes); 
 app.use('/api/auth', authRoutes);
 app.use('/api/userRelationships', userRelationshipsRoutes);
 app.use('/api/playlists', playlistRoutes);
-app.use('/api/soundEngines', soundEnginesRoutes);
-
-// Additional Middleware (Logging)
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);  // Logs the request method and URL
-  next();
-});
 
 // Metadata Routes (if still needed)
 app.get('/metadata/exoplanets.json', async (req, res) => {
